@@ -1,0 +1,72 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-04T19:49:32.183Z",
+  "summary": "A proposal document was added at `frontend/REDESIGN_PROPOSAL.md` and it explicitly states proposal-only, preserves the Onebit goal/session shape, and commits to deterministic-only “AI-like” behavior (based on the visible excerpt). However, the diff also includes multiple backend/frontend code changes even though the BuildRequest explicitly required proposal documentation only. Additionally, some required proposal sections (full end-to-end UX spec and the feature inventory decision table) are not evidenced in the truncated proposal excerpt.",
+  "missing_requirements": [
+    {
+      "id": "REQ-24",
+      "requirement": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, covering each screen’s purpose, primary decision, required inputs, outputs, deterministic processing, and stuck/overwhelm/burnout adaptations using both free text and structured inputs.",
+      "reason": "The added proposal excerpt shows the beginning of the redesigned flow (Landing/First-Run, Mental Dump, start of Context Snapshot) but does not evidence a complete end-to-end specification across all screens/steps, nor the full deterministic model elements required by the AC (richer suggestions, adaptive fallback tasks, stuck detection signals, dynamic micro-step selection/generation rules, improved understanding via combined signals) in the visible content.",
+      "evidence": [
+        "frontend/REDESIGN_PROPOSAL.md (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "requirement": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table re-evaluating all current features from zero (Keep/Modify/Remove/Postpone) with rationale; explicitly remove “Try Demo”/demo mode and the 3 canned demo sessions; include high-level backend implications.",
+      "reason": "While the proposal excerpt mentions removing demo mode, the required feature inventory decision table (covering existing features with Keep/Modify/Remove/Postpone and rationale) and explicit mention of removing the 3 canned demo sessions are not evidenced in the truncated content shown.",
+      "evidence": [
+        "frontend/REDESIGN_PROPOSAL.md (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Backend migration module added and wired into the Motoko actor.",
+      "reason": "The BuildRequest explicitly constrained this iteration to proposal documentation only (no code changes). Adding a migration module and wiring it into the actor is implementation work not requested.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Backend user profile storage endpoints (get/save) added with authorization checks.",
+      "reason": "Not requested; the BuildRequest requires proposal-only documentation and explicitly says not to implement redesigned flow/features in code in this iteration.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Frontend React Query hooks implemented/changed to fetch and save user profiles.",
+      "reason": "Not requested; implementation code changes violate the proposal-only constraint.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    },
+    {
+      "description": "Session sync module changed to include stubbed sync functions (returning false/empty).",
+      "reason": "Not requested; code changes are outside the scope of a proposal-only deliverable.",
+      "evidence": [
+        "frontend/src/sync/sessionSync.ts"
+      ]
+    },
+    {
+      "description": "Project metadata/state updated (`project_state.json`).",
+      "reason": "Not requested by the BuildRequest; changes beyond adding the proposal document are outside the specified deliverable.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "confidence": 0.74,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/REDESIGN_PROPOSAL.md",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/sync/sessionSync.ts",
+    "project_state.json"
+  ]
+}

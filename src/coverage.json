@@ -1,0 +1,67 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-04T19:49:32.223Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-23",
+        "summary": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ],
+        "matchedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ]
+      },
+      {
+        "id": "REQ-24",
+        "summary": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ],
+        "matchedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ]
+      },
+      {
+        "id": "REQ-25",
+        "summary": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ],
+        "matchedFiles": [
+          "frontend/REDESIGN_PROPOSAL.md"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/REDESIGN_PROPOSAL.md",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/sync/sessionSync.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

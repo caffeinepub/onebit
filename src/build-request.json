@@ -1,0 +1,85 @@
+{
+  "kind": "build_request",
+  "title": "From-scratch Onebit redesign proposal (deterministic “AI-like” expansion + wellness/burnout support; proposal-only)",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-23",
+      "text": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "Yes that would be better",
+          "yes re evaluated from 0",
+          "everything"
+        ]
+      },
+      "acceptanceCriteria": [
+        "`frontend/REDESIGN_PROPOSAL.md` exists and is written in English.",
+        "The proposal explicitly states this is a proposal-only deliverable (no implementation yet).",
+        "The proposal re-evaluates the product from zero (does not assume current features are kept) while keeping the same Onebit goal and the same overall session journey shape.",
+        "The proposal explicitly commits to deterministic-only behavior (no external LLM / no web AI integrations) while still aiming for “AI-like” richness via rules, heuristics, and structured inputs."
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "text": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5",
+          "msg-6"
+        ],
+        "quotes": [
+          "richer suggestions, more adaptive fallback tasks, smarter detection of stuck states, dynamic micro steps, understanding user's input in a better way.",
+          "everything"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The proposal defines the redesigned screens/steps and keeps “one primary decision per screen” as a guiding principle.",
+        "For each step, the proposal specifies: inputs (text + structured), deterministic processing, and user-facing outputs/copy tone guidelines (calm, respectful, non-gamified).",
+        "The proposal includes a deterministic model for: (a) richer suggestions, (b) adaptive fallback tasks, (c) stuck detection signals, (d) dynamic micro-step selection/generation rules, and (e) improved understanding of user input using combined text + structured signals.",
+        "The proposal defines explicit burnout/overwhelm handling: detection signals, recovery pathways, and “focus on the next one thing today” guidance, including normalization of failure and try-again paths."
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "text": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-3",
+          "msg-6"
+        ],
+        "quotes": [
+          "add more features into it like wellness for recovery or getting stuck as a new feature remove the try demo feature",
+          "yes re evaluated from 0"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The proposal includes a table that lists the existing features (e.g., demo mode, history, reflections, admin panel, accessibility controls, optional sync/auth) and indicates Keep/Modify/Remove/Postpone for each with one-sentence rationale.",
+        "Demo Mode / “Try Demo” is explicitly marked as Remove, with a short note describing what replaces its value (if anything) without adding new external integrations.",
+        "The proposal identifies any backend implications at a high level (data model needs, endpoints needed, migration risk), but does not require implementation yet."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not implement code changes in this build request; deliver proposal documentation only.",
+    "All user-facing text in the proposal must be in English.",
+    "Do not propose any external AI/LLM integration (OpenAI/Anthropic/etc.). Deterministic-only approaches only.",
+    "Respect platform constraints: single Motoko actor backend; React + TypeScript + Tailwind + React Query frontend; do not plan edits to immutable frontend paths listed in SYSTEM_CONTEXT."
+  ],
+  "nonGoals": [
+    "Implementing the redesigned flow or features in code in this iteration.",
+    "Adding third-party authentication providers (only Internet Identity is allowed).",
+    "Adding real-time features (WebSockets), push notifications, email/SMS, or external databases.",
+    "Live web browsing or web search as part of the app (proposal may reference best practices from general knowledge without claiming live research)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

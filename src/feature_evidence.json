@@ -1,0 +1,68 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-create-a-proposal-document-no-code-changes-that-redesigns-onebit-from-scratch-while-preserving-the-same-core-goal-and-session-format-and-proposes-an-expanded-set-of-deterministic-rule-based-ai-like-capabilities-plus-wellness-burnout-overwhelm-support-for-user-approval-before-implementation-add-the-document-to-the-repo-as-frontend-redesign-proposal-md",
+      "featureTitle": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
+      "files": [
+        "frontend/REDESIGN_PROPOSAL.md"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-23"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-frontend-redesign-proposal-md-include-a-complete-end-to-end-ux-specification-for-the-redesigned-onebit-flow-showing-each-screen-s-purpose-primary-decision-required-inputs-and-outputs-and-how-the-flow-adapts-when-the-user-is-stuck-overwhelmed-burned-out-the-flow-must-use-both-free-text-and-structured-inputs-everything-to-better-understand-user-state",
+      "featureTitle": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
+      "files": [
+        "frontend/REDESIGN_PROPOSAL.md"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-24"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-frontend-redesign-proposal-md-include-a-feature-inventory-decision-table-that-re-evaluates-all-current-onebit-features-from-zero-and-marks-each-as-keep-modify-remove-or-postpone-the-proposal-must-explicitly-remove-the-try-demo-demo-mode-entrypoint-and-the-3-canned-demo-sessions-from-the-intended-product-experience",
+      "featureTitle": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
+      "files": [
+        "frontend/REDESIGN_PROPOSAL.md"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-25"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

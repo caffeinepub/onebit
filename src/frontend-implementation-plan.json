@@ -1,0 +1,57 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Onebit from-scratch redesign proposal (documentation-only)",
+  "requirements": [
+    {
+      "id": "REQ-23",
+      "summary": "Add a proposal-only redesign document that re-evaluates Onebit from zero while preserving the core goal and overall session journey shape, and commits to deterministic-only “AI-like” behavior plus wellness/burnout support.",
+      "acceptanceCriteria": [
+        "`frontend/REDESIGN_PROPOSAL.md` exists and is written in English.",
+        "The proposal explicitly states this is a proposal-only deliverable (no implementation yet).",
+        "The proposal re-evaluates the product from zero (does not assume current features are kept) while keeping the same Onebit goal and the same overall session journey shape.",
+        "The proposal explicitly commits to deterministic-only behavior (no external LLM / no web AI integrations) while still aiming for “AI-like” richness via rules, heuristics, and structured inputs."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "operation": "create",
+          "description": "Create an English, proposal-only redesign document that rethinks Onebit from scratch while preserving the core goal and session format, and outlines an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval prior to any implementation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "summary": "Specify the redesigned end-to-end UX flow with one primary decision per screen, using both free text and structured inputs, and detailing deterministic adaptation for stuck/overwhelmed/burned out states.",
+      "acceptanceCriteria": [
+        "The proposal defines the redesigned screens/steps and keeps “one primary decision per screen” as a guiding principle.",
+        "For each step, the proposal specifies: inputs (text + structured), deterministic processing, and user-facing outputs/copy tone guidelines (calm, respectful, non-gamified).",
+        "The proposal includes a deterministic model for: (a) richer suggestions, (b) adaptive fallback tasks, (c) stuck detection signals, (d) dynamic micro-step selection/generation rules, and (e) improved understanding of user input using combined text + structured signals.",
+        "The proposal defines explicit burnout/overwhelm handling: detection signals, recovery pathways, and “focus on the next one thing today” guidance, including normalization of failure and try-again paths."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "operation": "modify",
+          "description": "Add an end-to-end UX specification section that enumerates each redesigned screen/step (purpose, one primary decision, required inputs including both free text and structured fields, deterministic processing rules/heuristics, and user-facing outputs/copy tone). Include explicit deterministic adaptation paths for stuck/overwhelmed/burned out states, including detection signals, recovery pathways, and try-again guidance."
+        }
+      ]
+    },
+    {
+      "id": "REQ-25",
+      "summary": "Add a feature inventory decision table that re-evaluates current Onebit features from zero and explicitly removes Demo Mode / “Try Demo” and the three canned demo sessions from the intended experience, with high-level backend implications noted.",
+      "acceptanceCriteria": [
+        "The proposal includes a table that lists the existing features (e.g., demo mode, history, reflections, admin panel, accessibility controls, optional sync/auth) and indicates Keep/Modify/Remove/Postpone for each with one-sentence rationale.",
+        "Demo Mode / “Try Demo” is explicitly marked as Remove, with a short note describing what replaces its value (if anything) without adding new external integrations.",
+        "The proposal identifies any backend implications at a high level (data model needs, endpoints needed, migration risk), but does not require implementation yet."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "operation": "modify",
+          "description": "Add a feature inventory decision table that reconsiders all current features from zero and marks each as Keep/Modify/Remove/Postpone with one-sentence rationale. Explicitly mark Demo Mode / “Try Demo” and the 3 canned demo sessions as Remove, and include a brief deterministic replacement for their value (if any). Add a short high-level section listing backend implications (capability needs, migration risk) without requiring implementation."
+        }
+      ]
+    }
+  ]
+}

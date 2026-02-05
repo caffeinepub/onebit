@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 1.25rem;
+        
+        /* Calm color palette - Grok/Calm inspired */
+        --calm-sky: 0.94 0.03 220;
+        --calm-lavender: 0.90 0.05 280;
+        --calm-peach: 0.92 0.04 40;
+        --calm-deep: 0.32 0.10 245;
+        --calm-muted: 0.52 0.05 240;
+        --calm-border: 0.88 0.02 240;
+        
+        --background: 0.98 0.01 240;
+        --foreground: 0.22 0.10 245;
+        --card: 1 0 0;
+        --card-foreground: 0.22 0.10 245;
+        --popover: 1 0 0;
+        --popover-foreground: 0.22 0.10 245;
+        --primary: 0.32 0.10 245;
+        --primary-foreground: 0.98 0.01 240;
+        --secondary: 0.94 0.03 240;
+        --secondary-foreground: 0.32 0.10 245;
+        --muted: 0.94 0.03 240;
+        --muted-foreground: 0.52 0.05 240;
+        --accent: 0.90 0.05 280;
+        --accent-foreground: 0.32 0.10 245;
+        --destructive: 0.58 0.22 15;
+        --destructive-foreground: 0.98 0.01 240;
+        --border: 0.88 0.02 240;
+        --input: 0.88 0.02 240;
+        --ring: 0.32 0.10 245;
+        --chart-1: 0.62 0.16 220;
+        --chart-2: 0.68 0.13 280;
+        --chart-3: 0.72 0.11 320;
+        --chart-4: 0.65 0.15 180;
+        --chart-5: 0.70 0.12 40;
+        --sidebar: 0.98 0.01 240;
+        --sidebar-foreground: 0.22 0.10 245;
+        --sidebar-primary: 0.32 0.10 245;
+        --sidebar-primary-foreground: 0.98 0.01 240;
+        --sidebar-accent: 0.94 0.03 240;
+        --sidebar-accent-foreground: 0.32 0.10 245;
+        --sidebar-border: 0.88 0.02 240;
+        --sidebar-ring: 0.32 0.10 245;
+    }
+
+    .dark {
+        --background: 0.16 0.08 245;
+        --foreground: 0.96 0.02 240;
+        --card: 0.20 0.08 245;
+        --card-foreground: 0.96 0.02 240;
+        --popover: 0.20 0.08 245;
+        --popover-foreground: 0.96 0.02 240;
+        --primary: 0.72 0.11 245;
+        --primary-foreground: 0.16 0.08 245;
+        --secondary: 0.26 0.08 245;
+        --secondary-foreground: 0.96 0.02 240;
+        --muted: 0.26 0.08 245;
+        --muted-foreground: 0.62 0.05 240;
+        --accent: 0.32 0.10 280;
+        --accent-foreground: 0.96 0.02 240;
+        --destructive: 0.62 0.20 15;
+        --destructive-foreground: 0.16 0.08 245;
+        --border: 0.28 0.06 245;
+        --input: 0.28 0.06 245;
+        --ring: 0.62 0.10 245;
+        --chart-1: 0.52 0.20 220;
+        --chart-2: 0.58 0.17 280;
+        --chart-3: 0.62 0.14 320;
+        --chart-4: 0.55 0.18 180;
+        --chart-5: 0.60 0.15 40;
+        --sidebar: 0.20 0.08 245;
+        --sidebar-foreground: 0.96 0.02 240;
+        --sidebar-primary: 0.72 0.11 245;
+        --sidebar-primary-foreground: 0.16 0.08 245;
+        --sidebar-accent: 0.26 0.08 245;
+        --sidebar-accent-foreground: 0.96 0.02 240;
+        --sidebar-border: 0.28 0.06 245;
+        --sidebar-ring: 0.62 0.10 245;
+    }
+
+    * {
+        @apply border-border;
+    }
+    
+    body {
+        @apply bg-background text-foreground;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+            'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+            sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-weight: 300;
+        letter-spacing: -0.01em;
+    }
+
+    /* High contrast mode */
+    .high-contrast {
+        --calm-deep: 0.20 0.15 245;
+        --calm-muted: 0.40 0.08 240;
+        --calm-border: 0.75 0.05 240;
+        --foreground: 0.10 0.15 245;
+    }
+
+    /* Large font mode */
+    .large-font {
+        font-size: 112.5%;
+    }
+
+    .large-font h1 {
+        font-size: 1.15em;
+    }
+
+    .large-font h2 {
+        font-size: 1.12em;
+    }
+
+    .large-font p,
+    .large-font button,
+    .large-font input,
+    .large-font textarea {
+        font-size: 1.08em;
+    }
+
+    /* Enhanced focus states for keyboard navigation */
+    *:focus-visible {
+        outline: 3px solid oklch(var(--calm-deep));
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    button:focus-visible,
+    a:focus-visible {
+        outline: 3px solid oklch(var(--calm-deep));
+        outline-offset: 3px;
+    }
+}
+
+@layer utilities {
+    .text-calm-deep {
+        color: oklch(var(--calm-deep));
+    }
+    
+    .text-calm-muted {
+        color: oklch(var(--calm-muted));
+    }
+    
+    .bg-calm-deep {
+        background-color: oklch(var(--calm-deep));
+    }
+    
+    .bg-calm-sky {
+        background-color: oklch(var(--calm-sky));
+    }
+    
+    .bg-calm-lavender {
+        background-color: oklch(var(--calm-lavender));
+    }
+    
+    .bg-calm-peach {
+        background-color: oklch(var(--calm-peach));
+    }
+    
+    .border-calm-border {
+        border-color: oklch(var(--calm-border));
+    }
+    
+    .border-calm-deep {
+        border-color: oklch(var(--calm-deep));
+    }
+    
+    .animate-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
