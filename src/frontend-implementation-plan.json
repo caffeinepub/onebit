@@ -1,55 +1,403 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Onebit from-scratch redesign proposal (documentation-only)",
+  "title": "Onebit deterministic-by-default, local-first flow with demo mode, history/export, and admin-controlled optional LLM",
   "requirements": [
     {
-      "id": "REQ-23",
-      "summary": "Add a proposal-only redesign document that re-evaluates Onebit from zero while preserving the core goal and overall session journey shape, and commits to deterministic-only “AI-like” behavior plus wellness/burnout support.",
+      "id": "REQ-11",
+      "summary": "Restructure the app into the exact Onebit core flow with one primary action per screen and English-only UI text.",
       "acceptanceCriteria": [
-        "`frontend/REDESIGN_PROPOSAL.md` exists and is written in English.",
-        "The proposal explicitly states this is a proposal-only deliverable (no implementation yet).",
-        "The proposal re-evaluates the product from zero (does not assume current features are kept) while keeping the same Onebit goal and the same overall session journey shape.",
-        "The proposal explicitly commits to deterministic-only behavior (no external LLM / no web AI integrations) while still aiming for “AI-like” richness via rules, heuristics, and structured inputs."
+        "User can complete the full flow end-to-end without any AI/LLM configuration and without backend dependency (local-first).",
+        "Every step is reachable in the specified order; the flow never skips required steps.",
+        "Each step has one clear primary CTA; secondary actions (e.g., Back, End session) are visually secondary."
       ],
       "file_operations": [
         {
-          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Refactor the step state machine to match the required flow exactly: Landing → Mental Dump → Context Snapshot (blocker + time bucket) → Focus Compression → Action Mode → Manual Check-in → Recovery → Session End → Light Session History. Update SessionData fields to match the new flow (blocker, timeBucket, compressedAction, fallbackAction, recovery content, etc.), and ensure each screen has one primary CTA with secondary actions styled as secondary."
+        },
+        {
+          "path": "frontend/src/pages/ContextPage.tsx",
+          "operation": "modify",
+          "description": "Convert the page to the required Context Snapshot screen: capture blocker (single selection) and time bucket (10/20/30 minutes). Update labels and values to reflect blocker + time bucket only (remove 15/60/120 minute options and any non-required fields), keeping one primary Continue CTA and a secondary Back."
+        },
+        {
+          "path": "frontend/src/pages/ActionModePage.tsx",
+          "operation": "modify",
+          "description": "Update to represent Action Mode as a single-task screen driven by Focus Compression output and the selected time bucket; ensure the primary action is to start working (e.g., proceed to check-in) and secondary controls (timer pause/reset, end session) are visually secondary."
+        },
+        {
+          "path": "frontend/src/pages/CheckInPage.tsx",
+          "operation": "modify",
+          "description": "Ensure this page is the Manual Check-in step with only outcome choices (done/stuck/avoided) as the primary decision, aligned to required wording and flow transitions."
+        },
+        {
+          "path": "frontend/src/pages/SessionEndPage.tsx",
+          "operation": "modify",
+          "description": "Adjust Session End to be followed by Light Session History (primary CTA navigates to History). Keep any 'Start new Onebit' as a secondary action (since primary should be going to History at the end of the flow)."
+        },
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
           "operation": "create",
-          "description": "Create an English, proposal-only redesign document that rethinks Onebit from scratch while preserving the core goal and session format, and outlines an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval prior to any implementation."
+          "description": "Add the Light Session History screen required by the core flow, showing recent sessions and a single primary 'Start new Onebit' CTA, with export as a secondary action."
+        }
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "summary": "Implement deterministic Focus Compression in the frontend as the default, returning exactly one primary action plus an optional fallback action.",
+      "acceptanceCriteria": [
+        "Given the same (rawText, blocker, timeBucket), deterministic Focus Compression returns the same output every time.",
+        "If mental dump is empty/whitespace, the result is a safe default action and no fallback.",
+        "If no candidates fit the time bucket, it still chooses the highest-scoring candidate overall.",
+        "Frontend uses the deterministic output when LLM is disabled or unavailable; backend exposes an equivalent deterministic function/endpoint for optional sync parity."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/deterministicFocusCompression.ts",
+          "operation": "create",
+          "description": "Create deterministic Focus Compression utility: split mental dump by lines and common separators; score candidates by verb presence + urgency + shortness; prefer candidates that fit the selected time bucket (10/20/30); return exactly ONE primary action plus an optional fallback action. Ensure empty input returns a safe default action and no fallback."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire Focus Compression into the flow as its own step: after Context Snapshot, compute deterministic compression output from (mentalDump, blocker, timeBucket) and store primary action + optional fallback in session state, then proceed to Action Mode."
+        },
+        {
+          "path": "frontend/src/pages/FocusCompressionPage.tsx",
+          "operation": "create",
+          "description": "Add Focus Compression screen that displays the deterministic result (one primary action and optional fallback) with one primary CTA to accept/continue into Action Mode and an optional secondary action to use the fallback (only if present)."
+        },
+        {
+          "path": "frontend/src/pages/ActionModePage.tsx",
+          "operation": "modify",
+          "description": "Update to consume the chosen deterministic action (or chosen fallback) rather than generating a task by default; keep any optional LLM enhancement behind admin-controlled enablement and strict call limits handled elsewhere."
+        }
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "summary": "Implement deterministic Recovery Logic in the frontend as the default, producing minimal, non-therapeutic recovery content with exact micro-step counts.",
+      "acceptanceCriteria": [
+        "Recovery output for 'stuck' always includes exactly 2 micro-steps.",
+        "Recovery output for 'avoided' includes a reframe message, exactly 2 micro-steps, and a visible End Session option on the UI.",
+        "No recovery message contains therapy-like guidance, emotional diagnosis, or motivational coaching language."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/deterministicRecovery.ts",
+          "operation": "create",
+          "description": "Create deterministic Recovery utility: for outcome 'stuck' return exactly 2 micro-steps; for outcome 'avoided' return a neutral reframe plus exactly 2 micro-steps; keep language minimal and non-therapeutic."
+        },
+        {
+          "path": "frontend/src/pages/RecoveryPage.tsx",
+          "operation": "modify",
+          "description": "Replace default recovery generation with deterministic Recovery output. Render exactly two micro-steps and ensure that for 'avoided' the UI includes a visible End Session option as a secondary action. Keep UI wording minimal and neutral."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update session state to store recovery output (reframe optional + exactly 2 micro-steps) and ensure flow transitions: Manual Check-in → Recovery (for stuck/avoided) → Action Mode/Check-in continuation or Session End as specified."
+        }
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "summary": "Add a purely client-side countdown timer to Action Mode with start/pause/reset that matches the selected time bucket.",
+      "acceptanceCriteria": [
+        "Timer defaults to 10/20/30 minutes based on the chosen time bucket and counts down in real time.",
+        "User can pause/resume and reset the timer without losing the selected task.",
+        "Timer state does not trigger any backend requests."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useCountdownTimer.ts",
+          "operation": "create",
+          "description": "Implement a browser-only countdown timer hook supporting start/pause/reset and initializing duration from the session time bucket (10/20/30). Ensure it has no dependency on backend actors or LLM availability."
+        },
+        {
+          "path": "frontend/src/pages/ActionModePage.tsx",
+          "operation": "modify",
+          "description": "Add UI controls for the client-side timer (start/pause/reset) and initialize it to the selected time bucket. Keep 'Go to check-in' (or equivalent) as the single primary CTA; timer controls must be secondary."
+        }
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "summary": "Implement Demo Mode with exactly 3 canned sessions and zero API calls, usable end-to-end including export.",
+      "acceptanceCriteria": [
+        "Demo mode can be entered from the UI and clearly indicates it is demo mode.",
+        "In demo mode, the app uses only canned data and deterministic logic; it never calls backend canister methods and never attempts HTTP outcalls.",
+        "Exactly 3 canned sessions appear in Light Session History when demo mode is enabled."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/demo/demoSessions.ts",
+          "operation": "create",
+          "description": "Add exactly 3 canned sessions (including the fields needed for History and export) to be used when demo mode is enabled."
+        },
+        {
+          "path": "frontend/src/store/demoMode.ts",
+          "operation": "create",
+          "description": "Create a small local-first demo mode state helper (persisted across reloads) to enable/disable demo mode and expose a read API for the rest of the app."
+        },
+        {
+          "path": "frontend/src/pages/LandingPage.tsx",
+          "operation": "modify",
+          "description": "Add a secondary entrypoint to enable Demo Mode (clearly labeled) and show a visible 'Demo mode' indicator when enabled. Ensure copy is English-only."
+        },
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
+          "operation": "modify",
+          "description": "When demo mode is enabled, render only the 3 canned sessions (exactly 3) and ensure export uses those sessions; disable/hide backend sync controls while in demo mode."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Ensure demo mode forces deterministic logic and prevents any backend-dependent operations from being invoked in the flow. Route all session persistence/reads in demo mode to the canned session set and demo-safe behavior."
+        }
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "summary": "Implement local-first session storage (drafts + completed) with persistence across reloads and an opt-in backend sync toggle that is not required when off.",
+      "acceptanceCriteria": [
+        "With backend sync disabled, a user can create, complete, and view session history after reload without logging in.",
+        "With backend sync enabled, sessions are written to the backend and can be fetched again after clearing local storage (when authenticated).",
+        "Disabling backend sync prevents further backend writes and the UI continues to work normally offline."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/store/sessionStore.ts",
+          "operation": "create",
+          "description": "Implement a local-first session store using browser persistence (e.g., localStorage) to save session drafts and completed sessions across reloads. Include support for reading recent sessions for History."
+        },
+        {
+          "path": "frontend/src/store/syncSettings.ts",
+          "operation": "create",
+          "description": "Add a persisted opt-in backend sync setting (disabled by default) with a small API to read/update it, and logic to ensure the app functions normally when sync is off."
+        },
+        {
+          "path": "frontend/src/hooks/useOptionalBackendSync.ts",
+          "operation": "create",
+          "description": "Create a hook that, when backend sync is enabled and the user is authenticated, performs best-effort session sync using the backend actor; when disabled (or unauthenticated), it must perform zero backend calls."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Persist in-progress drafts and completed sessions via the local-first session store throughout the flow. Ensure backend sync is optional and only attempted when the opt-in toggle is enabled (and not in demo mode)."
+        },
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
+          "operation": "modify",
+          "description": "Add UI controls to enable/disable backend sync (opt-in). Ensure it is disabled by default, does not require login when off, and provides clear offline-safe behavior. Keep these controls secondary to the primary 'Start new Onebit' action."
+        }
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "summary": "Add Light Session History UI with required fields, consistent navigation access, and a 'Start new Onebit' entrypoint.",
+      "acceptanceCriteria": [
+        "History is reachable at the end of a session and also from a consistent navigation entrypoint.",
+        "History renders at least: time, focus task, outcome, and recovery info when applicable.",
+        "History behaves correctly in demo mode, local-only mode, and backend-sync mode."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
+          "operation": "modify",
+          "description": "Implement History rendering of recent sessions from local-first storage (and optionally merged results when backend sync is enabled). Include: timestamp, chosen one action, outcome, and recovery micro-steps/next step when present. Provide one primary CTA: 'Start new Onebit'."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the History page into the flow: after Session End, navigate to History. Also add a consistent navigation entrypoint to History (secondary UI element) without introducing new routes beyond the required pages."
+        },
+        {
+          "path": "frontend/src/pages/SessionEndPage.tsx",
+          "operation": "modify",
+          "description": "Update the end-of-session UI so the primary CTA navigates to Light Session History, and ensure the completed session is written to the local-first store before navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "summary": "Export session history to a plain .txt file generated in the browser with required fields, working offline and in demo mode.",
+      "acceptanceCriteria": [
+        "User can export and download a .txt file containing session history without any backend call.",
+        "Export includes: date/time, mental dump (optional), blocker/time bucket, chosen action, fallback (if any), outcome, and recovery micro-steps (if any).",
+        "Export works in demo mode and when backend is unreachable."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/exportSessionsTxt.ts",
+          "operation": "create",
+          "description": "Implement browser-only export utility to generate a readable .txt from session history with all required fields, and trigger a download without backend calls."
+        },
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
+          "operation": "modify",
+          "description": "Add a secondary 'Export .txt' action that uses the browser-only export utility and works for demo sessions and offline/local sessions."
+        }
+      ]
+    },
+    {
+      "id": "REQ-19",
+      "summary": "Make LLM integration optional and disabled by default via an admin-controlled setting; enforce max 3 LLM calls per session and fallback to deterministic logic on error/timeout; restrict LLM usage to Focus Compression and Recovery only.",
+      "acceptanceCriteria": [
+        "By default (fresh install), Action selection and Recovery use deterministic logic and never attempt LLM calls.",
+        "When LLM is enabled, only Focus Compression and Recovery may call LLM, and the session enforces max 3 calls total.",
+        "If LLM fails (including timeout), the UI shows deterministic results and continues the flow without breaking."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/store/adminSettings.ts",
+          "operation": "create",
+          "description": "Create a small settings store for admin-controlled flags (including LLM enabled/disabled), defaulting to disabled. Include a persisted local fallback so fresh installs default to deterministic behavior."
+        },
+        {
+          "path": "frontend/src/components/AdminSettingsDialog.tsx",
+          "operation": "create",
+          "description": "Add an admin-only dialog that exposes the LLM enable/disable toggle. Use the shadcn-ui Dialog/Button/Input/Switch components to provide consistent UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/ApiKeyDialog.tsx",
+          "operation": "modify",
+          "description": "Integrate the new admin LLM enable/disable control into the existing admin settings affordance (or link to the AdminSettingsDialog) so LLM stays disabled by default and admin-controlled. Use shadcn-ui components for consistency. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/FocusCompressionPage.tsx",
+          "operation": "modify",
+          "description": "If (and only if) admin has enabled LLM, allow an optional enhancement attempt for Focus Compression subject to max-3-calls-per-session; on error/timeout, fall back to deterministic output and continue."
+        },
+        {
+          "path": "frontend/src/pages/RecoveryPage.tsx",
+          "operation": "modify",
+          "description": "If (and only if) admin has enabled LLM, allow an optional enhancement attempt for Recovery subject to max-3-calls-per-session; on error/timeout, fall back to deterministic Recovery output and continue. Ensure LLM attempts only occur for Focus Compression and Recovery."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Enforce and track a max of 3 LLM calls per session in session state, shared across Focus Compression and Recovery. Ensure fresh installs default to deterministic behavior with zero LLM calls attempted until enabled by admin."
+        }
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "summary": "Enforce frontend-side OpenAI security constraints: never store/expose keys; validate/normalize any LLM output to minimal neutral single-sentence and fall back deterministically when invalid.",
+      "acceptanceCriteria": [
+        "Frontend never receives or stores the OpenAI API key and never logs it.",
+        "Backend rejects/avoids any OpenAI call when key is missing; the frontend still completes the flow using deterministic logic.",
+        "LLM output is post-validated/normalized to a single sentence; if invalid, deterministic fallback is used."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/llmOutputPolicy.ts",
+          "operation": "create",
+          "description": "Create a frontend validator/normalizer for any LLM-produced text used in Focus Compression/Recovery: ensure at most one sentence, neutral tone, no greetings, no motivational/therapy language, no self-referential AI phrasing; if invalid, return a signal to use deterministic fallback."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Harden parse/normalize handling so that any LLM text used by the UI is constrained by the single-sentence neutral policy (via the shared policy utility) and never logs or stores secrets. Ensure that on any error/timeout, the callers can cleanly fall back to deterministic logic."
+        },
+        {
+          "path": "frontend/src/pages/FocusCompressionPage.tsx",
+          "operation": "modify",
+          "description": "Apply the LLM output policy when optional LLM enhancement is enabled; if output violates constraints, discard and use deterministic Focus Compression output."
+        },
+        {
+          "path": "frontend/src/pages/RecoveryPage.tsx",
+          "operation": "modify",
+          "description": "Apply the LLM output policy when optional LLM enhancement is enabled; if output violates constraints, discard and use deterministic Recovery output."
+        }
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "summary": "Extend frontend to display admin-managed demo video link and pitch text on Landing without exposing admin-only controls to non-admins.",
+      "acceptanceCriteria": [
+        "Only admins can edit the demo video link and pitch text; non-admins can only view what is intended for public display.",
+        "Demo video link and pitch text persist across reloads and canister upgrades (if backend sync is used).",
+        "Landing page renders pitch text and a clickable demo video link when configured; if not configured, Landing still looks complete."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useLandingContent.ts",
+          "operation": "create",
+          "description": "Add a hook to fetch Landing display content (pitch text + demo video link) from backend when available, with a local fallback so Landing remains complete if not configured or backend is unavailable."
+        },
+        {
+          "path": "frontend/src/pages/LandingPage.tsx",
+          "operation": "modify",
+          "description": "Render the pitch text and a clickable demo video link when configured (via the landing content hook). Keep the existing Landing layout complete even when no content is configured, and ensure no admin-only controls are visible to non-admin users."
+        },
+        {
+          "path": "frontend/src/components/AdminSettingsDialog.tsx",
+          "operation": "modify",
+          "description": "Extend the admin-only settings dialog UI to include editable fields for demo video link (60s) and pitch text intended for public display. Use shadcn-ui components for inputs and dialogs. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "summary": "Apply a consistent Grok + Calm inspired minimal theme with strong accessibility: contrast, keyboard navigation, and visible focus states across the full flow.",
+      "acceptanceCriteria": [
+        "All interactive elements are keyboard reachable with visible focus indicators.",
+        "Text contrast is sufficient for readability across the app’s light theme (and dark theme if present).",
+        "Each screen has a clear hierarchy: one primary action, optional secondary actions."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Add/adjust global focus-visible styles to ensure strong visible focus indicators for keyboard users, and refine typography/spacing tokens to keep the UI calm and sparse. Preserve the existing Grok/Calm-inspired palette and maintain adequate contrast."
+        },
+        {
+          "path": "frontend/src/pages/LandingPage.tsx",
+          "operation": "modify",
+          "description": "Ensure Landing maintains a single primary CTA with secondary actions (Demo Mode, History entrypoint if added) visually secondary and keyboard accessible."
+        },
+        {
+          "path": "frontend/src/pages/HistoryPage.tsx",
+          "operation": "modify",
+          "description": "Ensure History screen keeps one primary CTA ('Start new Onebit') with export/sync toggles as secondary actions; verify keyboard navigation and focus order."
+        }
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "summary": "Add an in-repo build notes document describing deterministic logic locations, optional LLM hooks, safe enablement steps, and max-3-calls + fallback enforcement.",
+      "acceptanceCriteria": [
+        "Build notes are included in the repository and reference the actual source files/entrypoints used by the app.",
+        "Notes explicitly state that LLM is disabled by default and that deterministic logic remains available as fallback."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/BUILD_NOTES.md",
+          "operation": "create",
+          "description": "Document: (1) where deterministic Focus Compression and Recovery Logic live (frontend/src/utils/deterministicFocusCompression.ts, frontend/src/utils/deterministicRecovery.ts), (2) where optional LLM hooks live (FocusCompressionPage/RecoveryPage + relevant hooks), (3) how to enable LLM safely via admin-only settings and key configuration, and (4) how max-3-calls-per-session and deterministic fallback are enforced (referencing frontend/src/App.tsx session state + LLM policy utility)."
         }
       ]
     },
     {
       "id": "REQ-24",
-      "summary": "Specify the redesigned end-to-end UX flow with one primary decision per screen, using both free text and structured inputs, and detailing deterministic adaptation for stuck/overwhelmed/burned out states.",
+      "summary": "Document and reflect the closest safe alternative for backend secret constraints by keeping admin key entry separated and never exposed to the frontend.",
       "acceptanceCriteria": [
-        "The proposal defines the redesigned screens/steps and keeps “one primary decision per screen” as a guiding principle.",
-        "For each step, the proposal specifies: inputs (text + structured), deterministic processing, and user-facing outputs/copy tone guidelines (calm, respectful, non-gamified).",
-        "The proposal includes a deterministic model for: (a) richer suggestions, (b) adaptive fallback tasks, (c) stuck detection signals, (d) dynamic micro-step selection/generation rules, and (e) improved understanding of user input using combined text + structured signals.",
-        "The proposal defines explicit burnout/overwhelm handling: detection signals, recovery pathways, and “focus on the next one thing today” guidance, including normalization of failure and try-again paths."
+        "The implemented approach clearly separates admin-only key entry/storage from normal user usage.",
+        "Documentation explains the exact mechanism used for key storage and why (platform constraint), without exposing the key."
       ],
       "file_operations": [
         {
-          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "path": "frontend/BUILD_NOTES.md",
           "operation": "modify",
-          "description": "Add an end-to-end UX specification section that enumerates each redesigned screen/step (purpose, one primary decision, required inputs including both free text and structured fields, deterministic processing rules/heuristics, and user-facing outputs/copy tone). Include explicit deterministic adaptation paths for stuck/overwhelmed/burned out states, including detection signals, recovery pathways, and try-again guidance."
-        }
-      ]
-    },
-    {
-      "id": "REQ-25",
-      "summary": "Add a feature inventory decision table that re-evaluates current Onebit features from zero and explicitly removes Demo Mode / “Try Demo” and the three canned demo sessions from the intended experience, with high-level backend implications noted.",
-      "acceptanceCriteria": [
-        "The proposal includes a table that lists the existing features (e.g., demo mode, history, reflections, admin panel, accessibility controls, optional sync/auth) and indicates Keep/Modify/Remove/Postpone for each with one-sentence rationale.",
-        "Demo Mode / “Try Demo” is explicitly marked as Remove, with a short note describing what replaces its value (if anything) without adding new external integrations.",
-        "The proposal identifies any backend implications at a high level (data model needs, endpoints needed, migration risk), but does not require implementation yet."
-      ],
-      "file_operations": [
+          "description": "Add a section explaining that the frontend never handles OPENAI_API_KEY; admin-only key entry occurs through an admin UI and is stored backend-side (or canister-stored) as the closest safe alternative when project settings secrets cannot be programmatically written, and that the app remains fully usable deterministically without any key."
+        },
         {
-          "path": "frontend/REDESIGN_PROPOSAL.md",
+          "path": "frontend/src/components/ApiKeyDialog.tsx",
           "operation": "modify",
-          "description": "Add a feature inventory decision table that reconsiders all current features from zero and marks each as Keep/Modify/Remove/Postpone with one-sentence rationale. Explicitly mark Demo Mode / “Try Demo” and the 3 canned demo sessions as Remove, and include a brief deterministic replacement for their value (if any). Add a short high-level section listing backend implications (capability needs, migration risk) without requiring implementation."
+          "description": "Update admin-only copy to clearly communicate the separation: the key is entered by admins only, never shown back to the UI, and normal users will always have deterministic functionality even if the key is absent. Use shadcn-ui components already present. Verify the component's usage instructions before implementing."
         }
       ]
     }

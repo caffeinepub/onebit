@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
-import { loadDraft, saveDraft } from '../store/sessionStore';
 
 interface MentalDumpPageProps {
   onNext: (mentalDump: string) => void;
@@ -11,19 +10,6 @@ interface MentalDumpPageProps {
 
 export default function MentalDumpPage({ onNext, onBack }: MentalDumpPageProps) {
   const [mentalDump, setMentalDump] = useState('');
-
-  useEffect(() => {
-    const draft = loadDraft();
-    if (draft && draft.mentalDump) {
-      setMentalDump(draft.mentalDump);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mentalDump) {
-      saveDraft({ mentalDump });
-    }
-  }, [mentalDump]);
 
   const handleNext = () => {
     onNext(mentalDump);
@@ -38,7 +24,7 @@ export default function MentalDumpPage({ onNext, onBack }: MentalDumpPageProps) 
           </h2>
           
           <p className="text-lg text-calm-muted font-light text-center max-w-xl mx-auto">
-            Messy is fine
+            List everything on your mind. One line per item, or separate with commas.
           </p>
 
           <Textarea
@@ -46,7 +32,6 @@ export default function MentalDumpPage({ onNext, onBack }: MentalDumpPageProps) 
             onChange={(e) => setMentalDump(e.target.value)}
             placeholder="Write blog post, reply to emails, call dentist..."
             className="min-h-[280px] text-lg bg-white/90 backdrop-blur-md border-2 border-calm-border/50 focus:border-calm-deep rounded-2xl p-6 resize-none font-light"
-            autoFocus
           />
         </div>
 

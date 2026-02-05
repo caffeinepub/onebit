@@ -1,64 +1,263 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T19:49:32.223Z",
+  "generatedAt": "2026-02-04T18:13:41.209Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 14,
+    "implemented": 14,
     "items": [
       {
-        "id": "REQ-23",
-        "summary": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
+        "id": "REQ-11",
+        "summary": "Implement the Onebit core flow exactly as: Landing → Mental Dump → Context Snapshot (blocker + time) → Focus Compression (deterministic) → Action Mode (single task + client timer) → Manual Check-in (done/stuck/avoided) → Recovery (micro-steps) → Session End → Light Session History, ensuring each screen presents a single primary decision/action and uses English for all user-facing text.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/ContextPage.tsx",
+          "frontend/src/pages/ActionModePage.tsx",
+          "frontend/src/pages/CheckInPage.tsx",
+          "frontend/src/pages/SessionEndPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/ContextPage.tsx",
+          "frontend/src/pages/ActionModePage.tsx",
+          "frontend/src/pages/CheckInPage.tsx",
+          "frontend/src/pages/SessionEndPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-12",
+        "summary": "Implement deterministic Focus Compression as the default behavior in both frontend and backend: split mental dump by lines (and common separators), score candidates (verb + urgency + shortness), prefer candidates that fit the selected time bucket (10/20/30 minutes), and return exactly ONE primary action plus an optional fallback action.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/deterministicFocusCompression.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/ActionModePage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/deterministicFocusCompression.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/ActionModePage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-13",
+        "summary": "Implement deterministic Recovery Logic as the default behavior in both frontend and backend: for outcome “stuck” return exactly 2 micro-steps; for outcome “avoided” return a neutral reframe plus exactly 2 micro-steps and an explicit option to end the session; keep language non-therapeutic, non-motivational, and minimal.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/deterministicRecovery.ts",
+          "frontend/src/pages/RecoveryPage.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/deterministicRecovery.ts",
+          "frontend/src/pages/RecoveryPage.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-14",
+        "summary": "Add a client-side timer in Action Mode (runs entirely in the browser) that supports start/pause/reset and matches the selected time bucket; the timer must not require backend calls and must not be affected by LLM availability.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useCountdownTimer.ts",
+          "frontend/src/pages/ActionModePage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useCountdownTimer.ts",
+          "frontend/src/pages/ActionModePage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-15",
+        "summary": "Implement Demo Mode with exactly 3 canned sessions and zero API calls (no OpenAI calls and no backend dependency), and ensure the full flow is usable in demo mode from Landing through History and export.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/demo/demoSessions.ts",
+          "frontend/src/store/demoMode.ts",
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/demo/demoSessions.ts",
+          "frontend/src/store/demoMode.ts",
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-16",
+        "summary": "Implement local-first session storage: store session drafts and completed sessions on the client (persisted across reloads), and add an opt-in toggle for backend sync that, when enabled, syncs sessions to the Motoko backend; when disabled, the app must not require authentication or backend availability.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/store/sessionStore.ts",
+          "frontend/src/store/syncSettings.ts",
+          "frontend/src/hooks/useOptionalBackendSync.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/store/sessionStore.ts",
+          "frontend/src/store/syncSettings.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-17",
+        "summary": "Add Light Session History UI showing recent sessions (local-first, optionally merged with backend-synced sessions when enabled), including: timestamp, chosen one action, outcome, and (if present) recovery micro-steps/next step; provide a “Start new Onebit” entrypoint from History.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/HistoryPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/SessionEndPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/HistoryPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/SessionEndPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-18",
+        "summary": "Implement export of session history as a plain .txt file generated in the browser (no backend), including the key fields for each session in a readable format; the export must work in demo mode and offline.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/exportSessionsTxt.ts",
+          "frontend/src/pages/HistoryPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/exportSessionsTxt.ts",
+          "frontend/src/pages/HistoryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-19",
+        "summary": "Make LLM integration optional and disabled by default: add a clearly labeled admin-controlled setting that enables/disables LLM usage, enforce a maximum of 3 LLM calls per session, and always fall back to deterministic Focus Compression and deterministic Recovery Logic on error/timeout; restrict LLM usage to only Focus Compression and Recovery.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/store/adminSettings.ts",
+          "frontend/src/components/AdminSettingsDialog.tsx",
+          "frontend/src/components/ApiKeyDialog.tsx",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/RecoveryPage.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/store/adminSettings.ts",
+          "frontend/src/components/AdminSettingsDialog.tsx",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/RecoveryPage.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-20",
+        "summary": "Enforce strict OpenAI security and output constraints: OpenAI requests must be made backend-only and only if OPENAI_API_KEY is configured in the backend; never store or expose the key in frontend state, logs, or UI; ensure any LLM output is at most 1 sentence, neutral, and contains no therapy/motivation, greetings, or self-referential AI language.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/llmOutputPolicy.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/RecoveryPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/llmOutputPolicy.ts",
+          "frontend/src/pages/FocusCompressionPage.tsx",
+          "frontend/src/pages/RecoveryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-21",
+        "summary": "Extend the private Admin panel to (a) manage OPENAI_API_KEY (existing) and (b) attach a demo video link (60s) and pitch text stored in backend state; expose these two fields to the Landing page for display without exposing admin-only controls to non-admin users.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useLandingContent.ts",
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/components/AdminSettingsDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/components/AdminSettingsDialog.tsx"
+        ]
+      },
+      {
+        "id": "REQ-22",
+        "summary": "Accessibility and UI theme: apply a Grok + Calm inspired (reference-only) minimal theme consistently across all pages, maintaining strong contrast, keyboard navigation, visible focus states, and clear typography; keep the UI calm and sparse with one decision per screen.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/pages/HistoryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-23",
+        "summary": "Add a short build notes document in-repo that explains: (1) where deterministic Focus Compression and Recovery Logic live, (2) where the optional LLM hooks live, (3) how to enable LLM safely (admin steps, key configuration), and (4) how the max-3-calls-per-session and fallback behavior are enforced.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/BUILD_NOTES.md"
+        ],
+        "matchedFiles": [
+          "frontend/BUILD_NOTES.md"
         ]
       },
       {
         "id": "REQ-24",
-        "summary": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
+        "summary": "Builder check / unsupported capability handling: if “backend secrets (project settings)” cannot be programmatically written by the app, keep the admin “paste API key” flow as canister-stored secret (admin-only) and document this as the closest safe alternative while still preventing exposure to the frontend.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
+          "frontend/BUILD_NOTES.md",
+          "frontend/src/components/ApiKeyDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
-        ]
-      },
-      {
-        "id": "REQ-25",
-        "summary": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
-        ],
-        "matchedFiles": [
-          "frontend/REDESIGN_PROPOSAL.md"
+          "frontend/BUILD_NOTES.md"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/REDESIGN_PROPOSAL.md",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/sync/sessionSync.ts",
+    "frontend/BUILD_NOTES.md",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AdminSettingsDialog.tsx",
+    "frontend/src/demo/demoSessions.ts",
+    "frontend/src/hooks/useCountdownTimer.ts",
+    "frontend/src/pages/ActionModePage.tsx",
+    "frontend/src/pages/CheckInPage.tsx",
+    "frontend/src/pages/ContextPage.tsx",
+    "frontend/src/pages/FocusCompressionPage.tsx",
+    "frontend/src/pages/HistoryPage.tsx",
+    "frontend/src/pages/LandingPage.tsx",
+    "frontend/src/pages/MentalDumpPage.tsx",
+    "frontend/src/pages/RecoveryPage.tsx",
+    "frontend/src/pages/SessionEndPage.tsx",
+    "frontend/src/store/adminSettings.ts",
+    "frontend/src/store/demoMode.ts",
+    "frontend/src/store/sessionStore.ts",
+    "frontend/src/store/syncSettings.ts",
+    "frontend/src/utils/deterministicFocusCompression.ts",
+    "frontend/src/utils/deterministicRecovery.ts",
+    "frontend/src/utils/exportSessionsTxt.ts",
+    "frontend/src/utils/llmOutputPolicy.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

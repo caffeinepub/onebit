@@ -10,15 +10,10 @@ import CheckInPage from './pages/CheckInPage';
 import RecoveryPage from './pages/RecoveryPage';
 import SessionEndPage from './pages/SessionEndPage';
 import HistoryPage from './pages/HistoryPage';
-import FinalizationChecklistPage from './pages/FinalizationChecklistPage';
-import QuickAddDialog from './components/QuickAddDialog';
-import AccessibilityControls from './components/AccessibilityControls';
 import AdminSettingsDialog from './components/AdminSettingsDialog';
 import { loadDemoMode } from './store/demoMode';
 import { loadSyncSettings } from './store/syncSettings';
 import { loadAdminSettings } from './store/adminSettings';
-import { loadA11ySettings, applyA11ySettings } from './store/a11ySettings';
-import { appendToMentalDump } from './store/sessionStore';
 
 export type FlowStep = 
   | 'landing' 
@@ -29,8 +24,7 @@ export type FlowStep =
   | 'check-in' 
   | 'recovery' 
   | 'session-end'
-  | 'history'
-  | 'finalization-checklist';
+  | 'history';
 
 export type Blocker = 'too_many' | 'low_energy' | 'avoiding' | 'urgent';
 export type TimeBucket = 10 | 20 | 30;
@@ -42,12 +36,10 @@ export interface SessionData {
   timeBucket: TimeBucket;
   compressedAction: string;
   fallbackAction: string | null;
-  rationale: string;
   outcome: Outcome;
   recoveryMessage: string;
   recoveryMicroSteps: string[];
-  quickNote: string;
-  timeSpent: number;
+  llmCallCount: number;
   timestamp: number;
 }
 
@@ -59,35 +51,18 @@ function App() {
     timeBucket: 10,
     compressedAction: '',
     fallbackAction: null,
-    rationale: '',
     outcome: '',
     recoveryMessage: '',
     recoveryMicroSteps: [],
-    quickNote: '',
-    timeSpent: 0,
+    llmCallCount: 0,
     timestamp: 0,
   });
 
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-
+  // Initialize stores on mount
   useEffect(() => {
     loadDemoMode();
     loadSyncSettings();
     loadAdminSettings();
-    const a11ySettings = loadA11ySettings();
-    applyA11ySettings(a11ySettings);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        setQuickAddOpen(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const updateSessionData = (data: Partial<SessionData>) => {
@@ -102,27 +77,16 @@ function App() {
       timeBucket: 10,
       compressedAction: '',
       fallbackAction: null,
-      rationale: '',
       outcome: '',
       recoveryMessage: '',
       recoveryMicroSteps: [],
-      quickNote: '',
-      timeSpent: 0,
+      llmCallCount: 0,
       timestamp: 0,
     });
   };
 
-  const handleQuickAddSubmit = (text: string) => {
-    appendToMentalDump(text);
-    setQuickAddOpen(false);
-  };
-
   const handleRecoveryContinue = () => {
     setCurrentStep('check-in');
-  };
-
-  const handleRecoveryStartNew = () => {
-    resetSession();
   };
 
   return (
@@ -137,7 +101,6 @@ function App() {
           {currentStep === 'landing' && (
             <LandingPage 
               onStart={() => setCurrentStep('mental-dump')}
-              onStartDemo={() => setCurrentStep('mental-dump')}
               onViewHistory={() => setCurrentStep('history')}
             />
           )}
@@ -165,8 +128,8 @@ function App() {
           {currentStep === 'focus-compression' && (
             <FocusCompressionPage
               sessionData={sessionData}
-              onNext={(compressedAction, fallbackAction, rationale) => {
-                updateSessionData({ compressedAction, fallbackAction, rationale });
+              onNext={(compressedAction, fallbackAction, llmCallCount) => {
+                updateSessionData({ compressedAction, fallbackAction, llmCallCount });
                 setCurrentStep('action');
               }}
             />
@@ -175,10 +138,7 @@ function App() {
           {currentStep === 'action' && (
             <ActionModePage
               sessionData={sessionData}
-              onCheckIn={(quickNote, timeSpent) => {
-                updateSessionData({ quickNote, timeSpent });
-                setCurrentStep('check-in');
-              }}
+              onCheckIn={() => setCurrentStep('check-in')}
             />
           )}
           
@@ -186,7 +146,11 @@ function App() {
             <CheckInPage
               onOutcome={(outcome) => {
                 updateSessionData({ outcome });
-                setCurrentStep('recovery');
+                if (outcome === 'done') {
+                  setCurrentStep('session-end');
+                } else {
+                  setCurrentStep('recovery');
+                }
               }}
             />
           )}
@@ -194,11 +158,10 @@ function App() {
           {currentStep === 'recovery' && (
             <RecoveryPage
               sessionData={sessionData}
-              onRecoveryGenerated={(recoveryMessage, recoveryMicroSteps) => {
-                updateSessionData({ recoveryMessage, recoveryMicroSteps });
+              onRecoveryGenerated={(recoveryMessage, recoveryMicroSteps, llmCallCount) => {
+                updateSessionData({ recoveryMessage, recoveryMicroSteps, llmCallCount });
               }}
               onContinue={handleRecoveryContinue}
-              onStartNew={handleRecoveryStartNew}
               onEndSession={() => setCurrentStep('session-end')}
             />
           )}
@@ -207,7 +170,6 @@ function App() {
             <SessionEndPage
               sessionData={sessionData}
               onViewHistory={() => setCurrentStep('history')}
-              onStartNew={resetSession}
             />
           )}
 
@@ -216,20 +178,8 @@ function App() {
               onStartNew={resetSession}
             />
           )}
-
-          {currentStep === 'finalization-checklist' && (
-            <FinalizationChecklistPage
-              onBack={() => setCurrentStep('landing')}
-            />
-          )}
         </div>
         
-        <AccessibilityControls />
-        <QuickAddDialog 
-          open={quickAddOpen} 
-          onOpenChange={setQuickAddOpen}
-          onSubmit={handleQuickAddSubmit}
-        />
         <AdminSettingsDialog />
         <Toaster />
       </div>

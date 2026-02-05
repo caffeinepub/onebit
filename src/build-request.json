@@ -1,82 +1,276 @@
 {
   "kind": "build_request",
-  "title": "From-scratch Onebit redesign proposal (deterministic “AI-like” expansion + wellness/burnout support; proposal-only)",
+  "title": "Rebuild Onebit to be deterministic-by-default, local-first, with optional backend sync + private admin panel",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-23",
-      "text": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
-      "target": "both",
+      "id": "REQ-11",
+      "text": "Implement the Onebit core flow exactly as: Landing → Mental Dump → Context Snapshot (blocker + time) → Focus Compression (deterministic) → Action Mode (single task + client timer) → Manual Check-in (done/stuck/avoided) → Recovery (micro-steps) → Session End → Light Session History, ensuring each screen presents a single primary decision/action and uses English for all user-facing text.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "Yes that would be better",
-          "yes re evaluated from 0",
-          "everything"
+          "Core flow (must be implemented exactly): Landing → Mental Dump → Context Snapshot (blocker + time) → Focus Compression (deterministic) → Action Mode (single task + client timer) → Manual Check-in (done/stuck/avoided) → Recovery (micro-steps) → Session End → Light Session History.",
+          "Use English for any user-facing text in the build request."
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/REDESIGN_PROPOSAL.md` exists and is written in English.",
-        "The proposal explicitly states this is a proposal-only deliverable (no implementation yet).",
-        "The proposal re-evaluates the product from zero (does not assume current features are kept) while keeping the same Onebit goal and the same overall session journey shape.",
-        "The proposal explicitly commits to deterministic-only behavior (no external LLM / no web AI integrations) while still aiming for “AI-like” richness via rules, heuristics, and structured inputs."
+        "User can complete the full flow end-to-end without any AI/LLM configuration and without backend dependency (local-first).",
+        "Every step is reachable in the specified order; the flow never skips required steps.",
+        "Each step has one clear primary CTA; secondary actions (e.g., Back, End session) are visually secondary."
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "text": "Implement deterministic Focus Compression as the default behavior in both frontend and backend: split mental dump by lines (and common separators), score candidates (verb + urgency + shortness), prefer candidates that fit the selected time bucket (10/20/30 minutes), and return exactly ONE primary action plus an optional fallback action.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Deterministic rules (must be implemented in backend/frontend): FocusCompression: split text by lines, score candidates (verbs + urgency), match to time bucket, return ONE action + fallback.",
+          "A — Deterministic FocusCompression (JavaScript)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Given the same (rawText, blocker, timeBucket), deterministic Focus Compression returns the same output every time.",
+        "If mental dump is empty/whitespace, the result is a safe default action and no fallback.",
+        "If no candidates fit the time bucket, it still chooses the highest-scoring candidate overall.",
+        "Frontend uses the deterministic output when LLM is disabled or unavailable; backend exposes an equivalent deterministic function/endpoint for optional sync parity."
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "text": "Implement deterministic Recovery Logic as the default behavior in both frontend and backend: for outcome “stuck” return exactly 2 micro-steps; for outcome “avoided” return a neutral reframe plus exactly 2 micro-steps and an explicit option to end the session; keep language non-therapeutic, non-motivational, and minimal.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Deterministic rules (must be implemented in backend/frontend): RecoveryLogic: for “stuck”, return 2 micro-steps; for “avoided”, offer reframe + option to end.",
+          "B — Deterministic Recovery Logic (JS)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Recovery output for 'stuck' always includes exactly 2 micro-steps.",
+        "Recovery output for 'avoided' includes a reframe message, exactly 2 micro-steps, and a visible End Session option on the UI.",
+        "No recovery message contains therapy-like guidance, emotional diagnosis, or motivational coaching language."
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Add a client-side timer in Action Mode (runs entirely in the browser) that supports start/pause/reset and matches the selected time bucket; the timer must not require backend calls and must not be affected by LLM availability.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Action Mode (single task + client timer)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Timer defaults to 10/20/30 minutes based on the chosen time bucket and counts down in real time.",
+        "User can pause/resume and reset the timer without losing the selected task.",
+        "Timer state does not trigger any backend requests."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "Implement Demo Mode with exactly 3 canned sessions and zero API calls (no OpenAI calls and no backend dependency), and ensure the full flow is usable in demo mode from Landing through History and export.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Demo mode with 3 canned sessions (no API calls)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Demo mode can be entered from the UI and clearly indicates it is demo mode.",
+        "In demo mode, the app uses only canned data and deterministic logic; it never calls backend canister methods and never attempts HTTP outcalls.",
+        "Exactly 3 canned sessions appear in Light Session History when demo mode is enabled."
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "text": "Implement local-first session storage: store session drafts and completed sessions on the client (persisted across reloads), and add an opt-in toggle for backend sync that, when enabled, syncs sessions to the Motoko backend; when disabled, the app must not require authentication or backend availability.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Local-first storage; optional backend sync (opt-in)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "With backend sync disabled, a user can create, complete, and view session history after reload without logging in.",
+        "With backend sync enabled, sessions are written to the backend and can be fetched again after clearing local storage (when authenticated).",
+        "Disabling backend sync prevents further backend writes and the UI continues to work normally offline."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Add Light Session History UI showing recent sessions (local-first, optionally merged with backend-synced sessions when enabled), including: timestamp, chosen one action, outcome, and (if present) recovery micro-steps/next step; provide a “Start new Onebit” entrypoint from History.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Session End → Light Session History."
+        ]
+      },
+      "acceptanceCriteria": [
+        "History is reachable at the end of a session and also from a consistent navigation entrypoint.",
+        "History renders at least: time, focus task, outcome, and recovery info when applicable.",
+        "History behaves correctly in demo mode, local-only mode, and backend-sync mode."
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "text": "Implement export of session history as a plain .txt file generated in the browser (no backend), including the key fields for each session in a readable format; the export must work in demo mode and offline.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "export sessions as .txt"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can export and download a .txt file containing session history without any backend call.",
+        "Export includes: date/time, mental dump (optional), blocker/time bucket, chosen action, fallback (if any), outcome, and recovery micro-steps (if any).",
+        "Export works in demo mode and when backend is unreachable."
+      ]
+    },
+    {
+      "id": "REQ-19",
+      "text": "Make LLM integration optional and disabled by default: add a clearly labeled admin-controlled setting that enables/disables LLM usage, enforce a maximum of 3 LLM calls per session, and always fall back to deterministic Focus Compression and deterministic Recovery Logic on error/timeout; restrict LLM usage to only Focus Compression and Recovery.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Implement deterministic decision logic by default and provide optional, well-documented hooks for LLM integration (disabled by default).",
+          "LLM calls: only for Focus Compression and Recovery; max 3 calls per session; must fallback to deterministic rules on error/timeouts."
+        ]
+      },
+      "acceptanceCriteria": [
+        "By default (fresh install), Action selection and Recovery use deterministic logic and never attempt LLM calls.",
+        "When LLM is enabled, only Focus Compression and Recovery may call LLM, and the session enforces max 3 calls total.",
+        "If LLM fails (including timeout), the UI shows deterministic results and continues the flow without breaking."
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "text": "Enforce strict OpenAI security and output constraints: OpenAI requests must be made backend-only and only if OPENAI_API_KEY is configured in the backend; never store or expose the key in frontend state, logs, or UI; ensure any LLM output is at most 1 sentence, neutral, and contains no therapy/motivation, greetings, or self-referential AI language.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Backend-only OpenAI integration only if OPENAI_API_KEY provided in backend secret. Do not store or expose keys in frontend or logs.",
+          "LLM output: max 1 sentence, neutral, no therapy/motivation."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend never receives or stores the OpenAI API key and never logs it.",
+        "Backend rejects/avoids any OpenAI call when key is missing; the frontend still completes the flow using deterministic logic.",
+        "LLM output is post-validated/normalized to a single sentence; if invalid, deterministic fallback is used."
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "text": "Extend the private Admin panel to (a) manage OPENAI_API_KEY (existing) and (b) attach a demo video link (60s) and pitch text stored in backend state; expose these two fields to the Landing page for display without exposing admin-only controls to non-admin users.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Admin (private) panel to paste OPENAI_API_KEY into backend-only secret and to attach a 60s demo video link + pitch text"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Only admins can edit the demo video link and pitch text; non-admins can only view what is intended for public display.",
+        "Demo video link and pitch text persist across reloads and canister upgrades (if backend sync is used).",
+        "Landing page renders pitch text and a clickable demo video link when configured; if not configured, Landing still looks complete."
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "text": "Accessibility and UI theme: apply a Grok + Calm inspired (reference-only) minimal theme consistently across all pages, maintaining strong contrast, keyboard navigation, visible focus states, and clear typography; keep the UI calm and sparse with one decision per screen.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Accessibility, Grok+Calm inspired theme, single decision per screen"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All interactive elements are keyboard reachable with visible focus indicators.",
+        "Text contrast is sufficient for readability across the app’s light theme (and dark theme if present).",
+        "Each screen has a clear hierarchy: one primary action, optional secondary actions."
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "text": "Add a short build notes document in-repo that explains: (1) where deterministic Focus Compression and Recovery Logic live, (2) where the optional LLM hooks live, (3) how to enable LLM safely (admin steps, key configuration), and (4) how the max-3-calls-per-session and fallback behavior are enforced.",
+      "target": "unknown",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Provide a short “build notes” file describing where LLM hooks live and how to enable them safely."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Build notes are included in the repository and reference the actual source files/entrypoints used by the app.",
+        "Notes explicitly state that LLM is disabled by default and that deterministic logic remains available as fallback."
       ]
     },
     {
       "id": "REQ-24",
-      "text": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-6"
-        ],
-        "quotes": [
-          "richer suggestions, more adaptive fallback tasks, smarter detection of stuck states, dynamic micro steps, understanding user's input in a better way.",
-          "everything"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The proposal defines the redesigned screens/steps and keeps “one primary decision per screen” as a guiding principle.",
-        "For each step, the proposal specifies: inputs (text + structured), deterministic processing, and user-facing outputs/copy tone guidelines (calm, respectful, non-gamified).",
-        "The proposal includes a deterministic model for: (a) richer suggestions, (b) adaptive fallback tasks, (c) stuck detection signals, (d) dynamic micro-step selection/generation rules, and (e) improved understanding of user input using combined text + structured signals.",
-        "The proposal defines explicit burnout/overwhelm handling: detection signals, recovery pathways, and “focus on the next one thing today” guidance, including normalization of failure and try-again paths."
-      ]
-    },
-    {
-      "id": "REQ-25",
-      "text": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
+      "text": "Builder check / unsupported capability handling: if “backend secrets (project settings)” cannot be programmatically written by the app, keep the admin “paste API key” flow as canister-stored secret (admin-only) and document this as the closest safe alternative while still preventing exposure to the frontend.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-3",
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "add more features into it like wellness for recovery or getting stuck as a new feature remove the try demo feature",
-          "yes re evaluated from 0"
+          "If any requested capability is unsupported, tell me which part and implement the closest safe alternative."
         ]
       },
       "acceptanceCriteria": [
-        "The proposal includes a table that lists the existing features (e.g., demo mode, history, reflections, admin panel, accessibility controls, optional sync/auth) and indicates Keep/Modify/Remove/Postpone for each with one-sentence rationale.",
-        "Demo Mode / “Try Demo” is explicitly marked as Remove, with a short note describing what replaces its value (if anything) without adding new external integrations.",
-        "The proposal identifies any backend implications at a high level (data model needs, endpoints needed, migration risk), but does not require implementation yet."
+        "The implemented approach clearly separates admin-only key entry/storage from normal user usage.",
+        "Documentation explains the exact mechanism used for key storage and why (platform constraint), without exposing the key."
       ]
     }
   ],
   "constraints": [
-    "Do not implement code changes in this build request; deliver proposal documentation only.",
-    "All user-facing text in the proposal must be in English.",
-    "Do not propose any external AI/LLM integration (OpenAI/Anthropic/etc.). Deterministic-only approaches only.",
-    "Respect platform constraints: single Motoko actor backend; React + TypeScript + Tailwind + React Query frontend; do not plan edits to immutable frontend paths listed in SYSTEM_CONTEXT."
+    "Backend must remain single-actor Motoko (all logic in backend/main.mo); add backend/migration.mo only if state schema changes require upgrade migration.",
+    "Do not edit files under frontend immutablePaths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui.",
+    "LLM integration must be backend-only; never store or expose OpenAI keys in frontend or logs.",
+    "App must be stable and fully functional without live LLMs; deterministic logic is the default."
   ],
   "nonGoals": [
-    "Implementing the redesigned flow or features in code in this iteration.",
-    "Adding third-party authentication providers (only Internet Identity is allowed).",
-    "Adding real-time features (WebSockets), push notifications, email/SMS, or external databases.",
-    "Live web browsing or web search as part of the app (proposal may reference best practices from general knowledge without claiming live research)."
+    "Adding any additional steps beyond the specified core flow.",
+    "Real-time features (websockets/chat/push notifications).",
+    "Third-party authentication beyond Internet Identity.",
+    "External databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],

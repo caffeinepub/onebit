@@ -13,128 +13,91 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { Settings, Loader2 } from 'lucide-react';
+import { useIsCallerAdmin, useStoreApiKey, useIsApiKeyConfigured } from '../hooks/useQueries';
 import { toast } from 'sonner';
-import { useNavigate } from '@tanstack/react-router';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { isDemoMode } from '../store/demoMode';
 import {
+  isLLMEnabled,
+  enableLLM,
+  disableLLM,
   getDemoVideoLink,
   setDemoVideoLink,
   getPitchText,
   setPitchText,
 } from '../store/adminSettings';
-import {
-  isSyncEnabled,
-  enableSync,
-  disableSync,
-} from '../store/syncSettings';
-import {
-  getDailyAnchors,
-  setDailyAnchors,
-} from '../store/dailyAnchorPhrases';
-import {
-  getMicroStepLibrary,
-  setMicroStepLibrary,
-  MicroStepCategory,
-} from '../store/microStepLibrary';
 
 export default function AdminSettingsDialog() {
   const [open, setOpen] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [llmEnabled, setLlmEnabled] = useState(false);
   const [videoLink, setVideoLink] = useState('');
   const [pitch, setPitch] = useState('');
-  const [syncEnabled, setSyncEnabled] = useState(false);
-  const [dailyAnchors, setDailyAnchorsState] = useState<string[]>([]);
-  const [microSteps, setMicroStepsState] = useState<MicroStepCategory[]>([]);
-  const [newAnchor, setNewAnchor] = useState('');
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [newStep, setNewStep] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, clear, identity, loginStatus } = useInternetIdentity();
-  const navigate = useNavigate();
-  const demoMode = isDemoMode();
+  const { data: isAdmin, isLoading: isAdminLoading } = useIsCallerAdmin();
+  const { data: isConfigured, isLoading: isConfiguredLoading } = useIsApiKeyConfigured();
+  const { mutateAsync: storeKey } = useStoreApiKey();
 
   useEffect(() => {
     if (open) {
+      setLlmEnabled(isLLMEnabled());
       setVideoLink(getDemoVideoLink());
       setPitch(getPitchText());
-      setSyncEnabled(isSyncEnabled());
-      setDailyAnchorsState(getDailyAnchors());
-      setMicroStepsState(getMicroStepLibrary());
     }
   }, [open]);
+
+  if (isAdminLoading || !isAdmin) {
+    return null;
+  }
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast.error('Please enter an API key');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await storeKey(apiKey);
+      toast.success('API key saved successfully');
+      setApiKey('');
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast.error('Failed to save API key');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClearApiKey = async () => {
+    setIsSubmitting(true);
+    try {
+      await storeKey('');
+      toast.success('API key cleared');
+      setApiKey('');
+    } catch (error) {
+      console.error('Error clearing API key:', error);
+      toast.error('Failed to clear API key');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleLLM = (checked: boolean) => {
+    if (checked) {
+      enableLLM();
+    } else {
+      disableLLM();
+    }
+    setLlmEnabled(checked);
+    toast.success(checked ? 'LLM enabled' : 'LLM disabled');
+  };
 
   const handleSaveContent = () => {
     setDemoVideoLink(videoLink);
     setPitchText(pitch);
-    setDailyAnchors(dailyAnchors);
-    setMicroStepLibrary(microSteps);
-    toast.success('Settings saved');
-  };
-
-  const handleToggleSync = async (checked: boolean) => {
-    if (demoMode) {
-      toast.error('Sync is unavailable in demo mode');
-      return;
-    }
-
-    if (checked) {
-      if (!identity) {
-        try {
-          await login();
-          enableSync();
-          setSyncEnabled(true);
-          toast.success('Sync enabled');
-        } catch (error) {
-          console.error('Login failed:', error);
-          toast.error('Login required to enable sync');
-        }
-      } else {
-        enableSync();
-        setSyncEnabled(true);
-        toast.success('Sync enabled');
-      }
-    } else {
-      disableSync();
-      setSyncEnabled(false);
-      toast.success('Sync disabled');
-    }
-  };
-
-  const handleAddAnchor = () => {
-    if (newAnchor.trim()) {
-      setDailyAnchorsState([...dailyAnchors, newAnchor.trim()]);
-      setNewAnchor('');
-    }
-  };
-
-  const handleRemoveAnchor = (index: number) => {
-    setDailyAnchorsState(dailyAnchors.filter((_, i) => i !== index));
-  };
-
-  const handleAddStep = (categoryName: string) => {
-    if (newStep.trim()) {
-      setMicroStepsState(microSteps.map(cat => 
-        cat.name === categoryName 
-          ? { ...cat, steps: [...cat.steps, newStep.trim()] }
-          : cat
-      ));
-      setNewStep('');
-      setEditingCategory(null);
-    }
-  };
-
-  const handleRemoveStep = (categoryName: string, stepIndex: number) => {
-    setMicroStepsState(microSteps.map(cat => 
-      cat.name === categoryName 
-        ? { ...cat, steps: cat.steps.filter((_, i) => i !== stepIndex) }
-        : cat
-    ));
-  };
-
-  const handleOpenChecklist = () => {
+    toast.success('Landing content saved');
     setOpen(false);
-    navigate({ to: '/finalization-checklist' });
   };
 
   return (
@@ -148,44 +111,107 @@ export default function AdminSettingsDialog() {
           <Settings className="h-5 w-5 text-calm-deep" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] bg-white/95 backdrop-blur-sm max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-light text-calm-deep">
             Admin Settings
           </DialogTitle>
           <DialogDescription className="text-calm-muted">
-            Configure landing content, daily anchors, micro-steps, and sync.
+            Configure LLM integration, API keys, and landing page content.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-8 py-4">
-          {/* Sync Toggle */}
+          {/* LLM Toggle */}
           <div className="space-y-4 p-4 rounded-lg bg-calm-deep/5 border border-calm-border">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="sync-toggle" className="text-base font-medium text-calm-deep">
-                  Backend Sync
+                <Label htmlFor="llm-toggle" className="text-base font-medium text-calm-deep">
+                  Enable LLM Enhancement
                 </Label>
                 <p className="text-sm text-calm-muted">
-                  {demoMode 
-                    ? 'Unavailable in demo mode' 
-                    : syncEnabled 
-                      ? 'Sessions sync to backend (requires sign-in)' 
-                      : 'Local-first only (default)'}
+                  {llmEnabled 
+                    ? 'LLM will enhance focus compression and recovery (max 3 calls/session)' 
+                    : 'Using deterministic logic only (default)'}
                 </p>
               </div>
               <Switch
-                id="sync-toggle"
-                checked={syncEnabled}
-                onCheckedChange={handleToggleSync}
-                disabled={demoMode}
+                id="llm-toggle"
+                checked={llmEnabled}
+                onCheckedChange={handleToggleLLM}
               />
+            </div>
+          </div>
+
+          {/* API Key Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-calm-deep/5 border border-calm-border">
+              {isConfiguredLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-calm-muted" />
+              ) : (
+                <div className={`h-3 w-3 rounded-full ${isConfigured ? 'bg-green-600' : 'bg-gray-400'}`} />
+              )}
+              <div>
+                <p className="text-sm font-medium text-calm-deep">
+                  {isConfiguredLoading ? 'Checking...' : isConfigured ? 'API Key Configured' : 'API Key Not Set'}
+                </p>
+                <p className="text-xs text-calm-muted">
+                  {isConfigured 
+                    ? 'Backend can make LLM calls when enabled' 
+                    : 'App works without API key (deterministic mode)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="apiKey" className="text-calm-deep">
+                OpenAI API Key
+              </Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder="sk-proj-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="bg-white border-calm-border focus:border-calm-deep"
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-calm-muted">
+                Key is stored backend-only and never exposed to users.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveApiKey}
+                disabled={isSubmitting || !apiKey.trim()}
+                className="bg-calm-deep hover:bg-calm-deep/90 text-white"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Key'
+                )}
+              </Button>
+              {isConfigured && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearApiKey}
+                  disabled={isSubmitting}
+                  className="border-rose-200 text-rose-600 hover:bg-rose-50"
+                >
+                  Clear Key
+                </Button>
+              )}
             </div>
           </div>
 
           {/* Landing Page Content */}
           <div className="space-y-4 pt-4 border-t border-calm-border">
-            <h3 className="text-lg font-medium text-calm-deep">Landing Page</h3>
+            <h3 className="text-lg font-medium text-calm-deep">Landing Page Content</h3>
             
             <div className="space-y-3">
               <Label htmlFor="videoLink" className="text-calm-deep">
@@ -210,119 +236,25 @@ export default function AdminSettingsDialog() {
                 placeholder="Let go of everything else. Just for a moment."
                 value={pitch}
                 onChange={(e) => setPitch(e.target.value)}
-                className="bg-white border-calm-border focus:border-calm-deep min-h-[80px]"
+                className="bg-white border-calm-border focus:border-calm-deep min-h-[100px]"
               />
             </div>
-          </div>
 
-          {/* Daily Anchors */}
-          <div className="space-y-4 pt-4 border-t border-calm-border">
-            <h3 className="text-lg font-medium text-calm-deep">Daily Anchor Phrases</h3>
-            <p className="text-sm text-calm-muted">One phrase rotates daily on the landing page.</p>
-            
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {dailyAnchors.map((anchor, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-calm-deep/5 rounded">
-                  <p className="flex-1 text-sm text-calm-deep">{anchor}</p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveAnchor(index)}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="h-4 w-4 text-rose-600" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add new anchor phrase..."
-                value={newAnchor}
-                onChange={(e) => setNewAnchor(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddAnchor()}
-                className="bg-white border-calm-border"
-              />
-              <Button onClick={handleAddAnchor} size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Micro-Step Library */}
-          <div className="space-y-4 pt-4 border-t border-calm-border">
-            <h3 className="text-lg font-medium text-calm-deep">Micro-Step Library</h3>
-            <p className="text-sm text-calm-muted">Recovery shows two steps based on task type.</p>
-            
-            <div className="space-y-4">
-              {microSteps.map((category) => (
-                <div key={category.name} className="p-4 bg-calm-deep/5 rounded-lg space-y-3">
-                  <h4 className="font-medium text-calm-deep">{category.name}</h4>
-                  
-                  <div className="space-y-2">
-                    {category.steps.map((step, stepIndex) => (
-                      <div key={stepIndex} className="flex items-center gap-2 p-2 bg-white rounded">
-                        <p className="flex-1 text-sm text-calm-deep">{step}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveStep(category.name, stepIndex)}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4 text-rose-600" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {editingCategory === category.name ? (
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="New step..."
-                        value={newStep}
-                        onChange={(e) => setNewStep(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddStep(category.name)}
-                        className="bg-white border-calm-border"
-                        autoFocus
-                      />
-                      <Button onClick={() => handleAddStep(category.name)} size="icon">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingCategory(category.name)}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add step
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Finalization Checklist Link */}
-          <div className="pt-4 border-t border-calm-border">
             <Button
-              onClick={handleOpenChecklist}
+              onClick={handleSaveContent}
               variant="outline"
               className="w-full"
             >
-              Open Finalization Checklist
+              Save Landing Content
             </Button>
           </div>
         </div>
 
         <DialogFooter>
-          <Button onClick={handleSaveContent} className="bg-calm-deep hover:bg-calm-deep/90 text-white">
-            Save All Settings
-          </Button>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button
+            variant="ghost"
+            onClick={() => setOpen(false)}
+          >
             Close
           </Button>
         </DialogFooter>

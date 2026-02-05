@@ -37,7 +37,7 @@ export default function ContextPage({ onNext, onBack }: ContextPageProps) {
         <div className="space-y-12">
           <div className="space-y-7">
             <h2 className="text-3xl md:text-5xl font-extralight text-calm-deep tracking-tight text-center leading-tight">
-              What's making it hard right now?
+              What's the main blocker?
             </h2>
             
             <RadioGroup value={blocker} onValueChange={(v) => setBlocker(v as Blocker)}>
@@ -67,7 +67,7 @@ export default function ContextPage({ onNext, onBack }: ContextPageProps) {
 
           <div className="space-y-7">
             <h2 className="text-3xl md:text-5xl font-extralight text-calm-deep tracking-tight text-center leading-tight">
-              How much time can you give right now?
+              How much time do you have?
             </h2>
             
             <RadioGroup value={String(timeBucket)} onValueChange={(v) => setTimeBucket(Number(v) as TimeBucket)}>

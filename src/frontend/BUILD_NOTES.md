@@ -1,66 +1,125 @@
 # Onebit Build Notes
 
-## Architecture Overview
-Onebit is a deterministic-only focus app built with React + TypeScript frontend and Motoko backend on the Internet Computer.
+## Overview
+Onebit is a calm, minimal web app that helps people focus on ONE important action at a time. The app is **stable and fully functional without LLMs** by default, using deterministic logic for all decision-making.
 
-## Core Features
-- **Deterministic Logic**: All focus compression and recovery use rule-based algorithms (no AI/LLM)
-- **Local-First**: Sessions stored in localStorage by default
-- **Optional Backend Sync**: Users can enable sync (requires Internet Identity sign-in)
-- **Demo Mode**: Three prefilled demo flows with zero backend calls
-- **Daily Anchor**: One rotating phrase per day on landing page
-- **Micro-Step Library**: Editable recovery steps by category
-- **End-of-Day Reflection**: Optional once-per-day prompt
-- **Habit Memory**: "You used Onebit on X of the last 14 days" (no streaks)
-- **Finalization Checklist**: In-app setup wizard for deployment
+## Architecture
 
-## Key Files
+### Deterministic Logic (Default)
+The app works completely offline and without any AI/LLM integration by default.
 
-### Deterministic Logic
-- `frontend/src/utils/deterministicFocusCompression.ts`: Task selection algorithm
-- `frontend/src/utils/deterministicRecovery.ts`: Recovery micro-step selection
-- `frontend/src/utils/habitMemory.ts`: Habit memory computation
+**Focus Compression** (`frontend/src/utils/deterministicFocusCompression.ts`)
+- Splits mental dump by lines and common separators
+- Scores candidates based on:
+  - Verb presence (write, call, email, etc.)
+  - Urgency indicators (urgent, ASAP, now)
+  - Time-bounded mentions
+  - Text length (shorter is better for single tasks)
+- Filters candidates to match selected time bucket (10/20/30 minutes)
+- Returns ONE primary action + optional fallback
+- Handles empty input gracefully with safe defaults
 
-### Storage
-- `frontend/src/store/sessionStore.ts`: Local session persistence
-- `frontend/src/store/dailyAnchorPhrases.ts`: Daily anchor phrase rotation
-- `frontend/src/store/microStepLibrary.ts`: Editable micro-step library
-- `frontend/src/store/reflectionsStore.ts`: End-of-day reflections
-- `frontend/src/store/finalizationChecklist.ts`: Deployment checklist data
-- `frontend/src/store/syncSettings.ts`: Backend sync toggle
-- `frontend/src/store/demoMode.ts`: Demo mode state
+**Recovery Logic** (`frontend/src/utils/deterministicRecovery.ts`)
+- For "stuck": Returns exactly 2 micro-steps based on task intent (writing/call/email/default)
+- For "avoided": Returns neutral reframe + exactly 2 micro-steps
+- For "done": Returns completion message
+- No therapy language, no motivational coaching
+- Minimal, neutral tone throughout
 
-### Sync
-- `frontend/src/sync/sessionSync.ts`: Optional backend sync coordinator
+### Optional LLM Integration (Disabled by Default)
 
-### Admin
-- `frontend/src/components/AdminSettingsDialog.tsx`: Admin panel (sync, content, library)
-- `frontend/src/pages/FinalizationChecklistPage.tsx`: Deployment checklist
+**Admin Control** (`frontend/src/store/adminSettings.ts`)
+- LLM is **disabled by default** on fresh installs
+- Admin can enable via Settings dialog (top-right gear icon)
+- Setting persists in localStorage
 
-## Flow
-1. Landing → Mental Dump → Context → Focus Compression → Action → Check-In → Recovery → Session End → History
-2. Admin panel accessible via settings icon (top-right)
-3. Finalization checklist accessible from admin panel
+**LLM Hooks** (Currently Placeholder)
+- `frontend/src/pages/FocusCompressionPage.tsx` - Can enhance focus compression
+- `frontend/src/pages/RecoveryPage.tsx` - Can enhance recovery suggestions
+- Max 3 LLM calls per session (tracked in `App.tsx` session state)
+- Always falls back to deterministic logic on error/timeout
 
-## Sync Behavior
-- **Sync Disabled (default)**: All data stays local, no sign-in required
-- **Sync Enabled**: Requires Internet Identity sign-in, sessions sync to backend
-- **Demo Mode**: Sync is always disabled
+**Output Validation** (`frontend/src/utils/llmOutputPolicy.ts`)
+- Validates LLM output to ensure:
+  - At most one sentence
+  - Neutral tone
+  - No greetings or AI self-references
+  - No motivational/therapy language
+  - Contains actionable content
+- Returns `null` if invalid → triggers deterministic fallback
 
-## Security
-- No API keys, no external AI services
-- Backend sync is opt-in and gated by authentication
-- Demo mode never calls backend
+**Backend Integration** (`backend/main.mo`)
+- API key stored backend-only via `storeApiKey()`
+- Never exposed to frontend or logs
+- Backend rejects LLM calls when key is missing
+- Frontend continues with deterministic logic
 
-## Accessibility
-- Full keyboard navigation
-- High-contrast mode toggle
-- Large-font mode toggle
-- Focus-visible states
+### How to Enable LLM Safely
 
-## Design
-- Calm, minimal aesthetic inspired by Grok and Calm
-- OKLCH color system with light mode
-- Soft shadows, spacious layout
-- No gamification, no streaks
-</typescript>
+1. **Admin Access Required**
+   - Log in with Internet Identity
+   - Ensure you have admin role (first user is auto-admin)
+
+2. **Configure API Key**
+   - Click Settings icon (top-right)
+   - Enter OpenAI API key in "OpenAI API Key" field
+   - Click "Save Key"
+   - Key is stored backend-only, never in frontend
+
+3. **Enable LLM Toggle**
+   - In same Settings dialog, toggle "Enable LLM Enhancement"
+   - This enables optional LLM calls for Focus Compression and Recovery
+   - Max 3 calls per session enforced
+
+4. **Fallback Behavior**
+   - If LLM fails (timeout, error, invalid output), app automatically uses deterministic logic
+   - User experience is never broken
+   - Session continues normally
+
+### Local-First Storage
+
+**Session Store** (`frontend/src/store/sessionStore.ts`)
+- Saves completed sessions to localStorage
+- Persists across reloads
+- No backend required
+
+**Backend Sync** (Optional, Opt-In)
+- Disabled by default
+- User can enable in History page
+- When enabled, sessions sync to backend (requires login)
+- When disabled, app works completely offline
+
+### Demo Mode
+
+**Demo Sessions** (`frontend/src/demo/demoSessions.ts`)
+- Exactly 3 canned sessions
+- Zero API calls
+- Fully functional end-to-end
+- Enable from Landing page "Try Demo" button
+
+**Demo Mode Store** (`frontend/src/store/demoMode.ts`)
+- Persists demo mode setting
+- When enabled:
+  - Shows canned sessions in History
+  - Prevents backend calls
+  - Uses only deterministic logic
+
+### Export
+
+**Export Utility** (`frontend/src/utils/exportSessionsTxt.ts`)
+- Browser-only, no backend calls
+- Generates readable .txt file
+- Includes: date/time, mental dump, blocker, time bucket, action, fallback, outcome, recovery steps
+- Works in demo mode and offline
+
+## Key Constraints
+
+1. **LLM is disabled by default** - Fresh installs use only deterministic logic
+2. **Max 3 LLM calls per session** - Enforced in `App.tsx` session state
+3. **LLM only for Focus Compression and Recovery** - No other features use LLM
+4. **Always fallback to deterministic** - On any LLM error/timeout
+5. **API key backend-only** - Never stored or exposed in frontend
+6. **App works without backend** - Local-first by default
+
+## File Structure
+

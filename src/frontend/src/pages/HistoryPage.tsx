@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Download } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Sparkles, Download, ArrowLeft } from 'lucide-react';
 import { loadSessions, StoredSession } from '../store/sessionStore';
 import { DEMO_SESSIONS } from '../demo/demoSessions';
 import { isDemoMode } from '../store/demoMode';
+import { isSyncEnabled, enableSync, disableSync } from '../store/syncSettings';
 import { exportSessionsToTxt } from '../utils/exportSessionsTxt';
-import { computeHabitMemory } from '../utils/habitMemory';
-import { getReflectionForDate, shouldShowReflectionPrompt, loadReflections } from '../store/reflectionsStore';
-import ReflectionPromptDialog from '../components/ReflectionPromptDialog';
 
 interface HistoryPageProps {
   onStartNew: () => void;
@@ -15,29 +15,30 @@ interface HistoryPageProps {
 
 export default function HistoryPage({ onStartNew }: HistoryPageProps) {
   const [sessions, setSessions] = useState<StoredSession[]>([]);
+  const [syncEnabled, setSyncEnabled] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
-  const [habitDays, setHabitDays] = useState(0);
-  const [showReflection, setShowReflection] = useState(false);
 
   useEffect(() => {
     const demo = isDemoMode();
     setDemoMode(demo);
     
-    loadReflections();
-    
     if (demo) {
       setSessions(DEMO_SESSIONS);
-      setHabitDays(3);
     } else {
-      const loadedSessions = loadSessions();
-      setSessions(loadedSessions);
-      setHabitDays(computeHabitMemory(loadedSessions));
-      
-      if (shouldShowReflectionPrompt() && loadedSessions.length > 0) {
-        setShowReflection(true);
-      }
+      setSessions(loadSessions());
     }
+
+    setSyncEnabled(isSyncEnabled());
   }, []);
+
+  const handleToggleSync = (checked: boolean) => {
+    if (checked) {
+      enableSync();
+    } else {
+      disableSync();
+    }
+    setSyncEnabled(checked);
+  };
 
   const handleExport = () => {
     exportSessionsToTxt(sessions);
@@ -53,12 +54,7 @@ export default function HistoryPage({ onStartNew }: HistoryPageProps) {
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
     
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const getDateKey = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const formatOutcome = (outcome: string) => {
@@ -83,13 +79,25 @@ export default function HistoryPage({ onStartNew }: HistoryPageProps) {
               Demo Mode - Showing sample sessions
             </div>
           )}
-
-          {!demoMode && sessions.length > 0 && (
-            <p className="text-lg text-calm-muted font-light">
-              You used Onebit on {habitDays} of the last 14 days
-            </p>
-          )}
         </div>
+
+        {!demoMode && (
+          <div className="flex items-center justify-between p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-calm-border/50">
+            <div className="space-y-1">
+              <Label htmlFor="sync-toggle" className="text-base font-light text-calm-deep">
+                Backend Sync
+              </Label>
+              <p className="text-sm text-calm-muted font-light">
+                {syncEnabled ? 'Sessions are synced to backend' : 'Local storage only'}
+              </p>
+            </div>
+            <Switch
+              id="sync-toggle"
+              checked={syncEnabled}
+              onCheckedChange={handleToggleSync}
+            />
+          </div>
+        )}
 
         {sessions.length === 0 ? (
           <div className="text-center py-16 space-y-6">
@@ -100,55 +108,40 @@ export default function HistoryPage({ onStartNew }: HistoryPageProps) {
         ) : (
           <>
             <div className="space-y-4">
-              {sessions.map((session) => {
-                const dateKey = getDateKey(session.timestamp);
-                const reflection = getReflectionForDate(dateKey);
-                
-                return (
-                  <div key={session.id} className="space-y-2">
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-calm-border/30 space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-2">
-                          <p className="text-xl font-light text-calm-deep">
-                            {session.compressedAction}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-calm-muted font-light">
-                            <span>{formatTimestamp(session.timestamp)}</span>
-                            <span>•</span>
-                            <span>{formatOutcome(session.outcome)}</span>
-                          </div>
-                        </div>
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-calm-border/30 space-y-4"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xl font-light text-calm-deep">
+                        {session.compressedAction}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-calm-muted font-light">
+                        <span>{formatTimestamp(session.timestamp)}</span>
+                        <span>•</span>
+                        <span>{session.timeBucket} min</span>
+                        <span>•</span>
+                        <span>{formatOutcome(session.outcome)}</span>
                       </div>
-
-                      {session.quickNote && (
-                        <div className="pt-2">
-                          <p className="text-sm text-calm-deep font-light italic">"{session.quickNote}"</p>
-                        </div>
-                      )}
-
-                      {session.recoveryMicroSteps.length > 0 && (
-                        <div className="pt-3 border-t border-calm-border/30">
-                          <p className="text-sm text-calm-muted font-light mb-2">Recovery steps:</p>
-                          <ul className="space-y-1">
-                            {session.recoveryMicroSteps.map((step, i) => (
-                              <li key={i} className="text-sm text-calm-deep font-light pl-4">
-                                • {step}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
-
-                    {reflection && (
-                      <div className="bg-calm-lavender/10 backdrop-blur-md rounded-xl p-4 border border-calm-lavender/30">
-                        <p className="text-xs text-calm-muted font-light mb-1">Reflection</p>
-                        <p className="text-sm text-calm-deep font-light italic">"{reflection}"</p>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+
+                  {session.recoveryMicroSteps.length > 0 && (
+                    <div className="pt-3 border-t border-calm-border/30">
+                      <p className="text-sm text-calm-muted font-light mb-2">Recovery steps:</p>
+                      <ul className="space-y-1">
+                        {session.recoveryMicroSteps.map((step, i) => (
+                          <li key={i} className="text-sm text-calm-deep font-light pl-4">
+                            • {step}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-center">
@@ -176,11 +169,6 @@ export default function HistoryPage({ onStartNew }: HistoryPageProps) {
           </Button>
         </div>
       </div>
-
-      <ReflectionPromptDialog 
-        open={showReflection} 
-        onOpenChange={setShowReflection}
-      />
     </div>
   );
 }

@@ -1,72 +1,113 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T19:49:32.183Z",
-  "summary": "A proposal document was added at `frontend/REDESIGN_PROPOSAL.md` and it explicitly states proposal-only, preserves the Onebit goal/session shape, and commits to deterministic-only “AI-like” behavior (based on the visible excerpt). However, the diff also includes multiple backend/frontend code changes even though the BuildRequest explicitly required proposal documentation only. Additionally, some required proposal sections (full end-to-end UX spec and the feature inventory decision table) are not evidenced in the truncated proposal excerpt.",
+  "generatedAt": "2026-02-04T18:13:41.157Z",
+  "summary": "The diff implements most of the frontend core flow, deterministic Focus Compression/Recovery (frontend), client timer, demo mode (3 canned sessions), local-first storage, history UI, and browser .txt export, plus build notes. However, several cross-cutting requirements that involve backend parity/sync and backend-stored admin content/LLM controls are missing or only implemented client-side (localStorage) with placeholders for backend-only LLM behavior.",
   "missing_requirements": [
     {
-      "id": "REQ-24",
-      "requirement": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, covering each screen’s purpose, primary decision, required inputs, outputs, deterministic processing, and stuck/overwhelm/burnout adaptations using both free text and structured inputs.",
-      "reason": "The added proposal excerpt shows the beginning of the redesigned flow (Landing/First-Run, Mental Dump, start of Context Snapshot) but does not evidence a complete end-to-end specification across all screens/steps, nor the full deterministic model elements required by the AC (richer suggestions, adaptive fallback tasks, stuck detection signals, dynamic micro-step selection/generation rules, improved understanding via combined signals) in the visible content.",
+      "id": "REQ-12",
+      "requirement": "Backend exposes an equivalent deterministic Focus Compression function/endpoint for optional sync parity.",
+      "reason": "Deterministic focus compression is implemented only in the frontend utility; the backend diff shows session/API key methods but no deterministic focus compression function/endpoint.",
       "evidence": [
-        "frontend/REDESIGN_PROPOSAL.md (truncated)"
+        "frontend/src/utils/deterministicFocusCompression.ts",
+        "backend/main.mo"
       ]
     },
     {
-      "id": "REQ-25",
-      "requirement": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table re-evaluating all current features from zero (Keep/Modify/Remove/Postpone) with rationale; explicitly remove “Try Demo”/demo mode and the 3 canned demo sessions; include high-level backend implications.",
-      "reason": "While the proposal excerpt mentions removing demo mode, the required feature inventory decision table (covering existing features with Keep/Modify/Remove/Postpone and rationale) and explicit mention of removing the 3 canned demo sessions are not evidenced in the truncated content shown.",
+      "id": "REQ-13",
+      "requirement": "Backend implements deterministic Recovery Logic (stuck -> exactly 2 micro-steps; avoided -> neutral reframe + exactly 2 micro-steps) for parity.",
+      "reason": "Deterministic recovery logic exists only in the frontend; backend changes do not show a recovery function/endpoint.",
       "evidence": [
-        "frontend/REDESIGN_PROPOSAL.md (truncated)"
+        "frontend/src/utils/deterministicRecovery.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "requirement": "Opt-in backend sync that, when enabled, syncs sessions to the Motoko backend and can be fetched after clearing local storage (when authenticated). Disabling sync prevents backend writes.",
+      "reason": "Frontend includes only a localStorage toggle for sync and local session storage. No evidence of frontend sync calls or backend endpoints to store/fetch user sessions for this local-first sync feature. Backend shows a sessions map but no clear write/read API that matches the session data stored client-side, nor any frontend integration.",
+      "evidence": [
+        "frontend/src/store/syncSettings.ts",
+        "frontend/src/pages/HistoryPage.tsx",
+        "frontend/src/store/sessionStore.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-19",
+      "requirement": "LLM integration optional and disabled by default with admin-controlled enable/disable, max 3 LLM calls per session, backend-only LLM calls restricted to Focus Compression and Recovery, deterministic fallback on error/timeout.",
+      "reason": "Frontend pages explicitly state LLM enhancement is TODO/placeholder and currently always deterministic (no LLM calls). There is no backend LLM call implementation shown in the backend diff summary. Also, max-3-calls-per-session enforcement is not evidenced in the shown code (App.tsx is truncated; FocusCompressionPage/RecoveryPage hardcode llmCallCount=0).",
+      "evidence": [
+        "frontend/src/pages/FocusCompressionPage.tsx",
+        "frontend/src/pages/RecoveryPage.tsx",
+        "backend/main.mo",
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "requirement": "Backend-only OpenAI requests only if OPENAI_API_KEY configured; reject/avoid call if missing; post-validate/normalize output to a single neutral sentence; deterministic fallback used if invalid.",
+      "reason": "A frontend-only LLM output policy utility exists, but there is no evidence of backend OpenAI call logic or backend-side output validation/normalization and fallback behavior in the backend diff.",
+      "evidence": [
+        "frontend/src/utils/llmOutputPolicy.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "requirement": "Admin panel manages demo video link and pitch text stored in backend state; landing page displays these fields publicly without exposing admin controls; persistence across reloads and canister upgrades (if backend sync used).",
+      "reason": "Demo video link and pitch text are stored in frontend localStorage (adminSettings store) and read by LandingPage from local state, not from backend canister state. No backend fields/endpoints for these values are shown.",
+      "evidence": [
+        "frontend/src/store/adminSettings.ts",
+        "frontend/src/pages/LandingPage.tsx",
+        "frontend/src/components/AdminSettingsDialog.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "requirement": "Document platform constraint handling for secrets: if backend secrets cannot be written programmatically, keep admin paste-key flow as canister-stored secret and document mechanism and why.",
+      "reason": "Build notes mention backend-only storage via storeApiKey(), but the diff excerpt does not clearly document the platform constraint/closest-safe alternative rationale described in REQ-24.",
+      "evidence": [
+        "frontend/BUILD_NOTES.md"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Backend migration module added and wired into the Motoko actor.",
-      "reason": "The BuildRequest explicitly constrained this iteration to proposal documentation only (no code changes). Adding a migration module and wiring it into the actor is implementation work not requested.",
+      "description": "Landing page footer promoting an external site (“Built with love using caffeine.ai”).",
+      "reason": "Not requested in the BuildRequest requirements/non-goals; appears as added UI content.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Backend user profile storage endpoints (get/save) added with authorization checks.",
-      "reason": "Not requested; the BuildRequest requires proposal-only documentation and explicitly says not to implement redesigned flow/features in code in this iteration.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Frontend React Query hooks implemented/changed to fetch and save user profiles.",
-      "reason": "Not requested; implementation code changes violate the proposal-only constraint.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts"
-      ]
-    },
-    {
-      "description": "Session sync module changed to include stubbed sync functions (returning false/empty).",
-      "reason": "Not requested; code changes are outside the scope of a proposal-only deliverable.",
-      "evidence": [
-        "frontend/src/sync/sessionSync.ts"
-      ]
-    },
-    {
-      "description": "Project metadata/state updated (`project_state.json`).",
-      "reason": "Not requested by the BuildRequest; changes beyond adding the proposal document are outside the specified deliverable.",
-      "evidence": [
-        "project_state.json"
+        "frontend/src/pages/LandingPage.tsx"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.68,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/REDESIGN_PROPOSAL.md",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/sync/sessionSync.ts",
+    "frontend/BUILD_NOTES.md",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AdminSettingsDialog.tsx",
+    "frontend/src/demo/demoSessions.ts",
+    "frontend/src/hooks/useCountdownTimer.ts",
+    "frontend/src/pages/ActionModePage.tsx",
+    "frontend/src/pages/CheckInPage.tsx",
+    "frontend/src/pages/ContextPage.tsx",
+    "frontend/src/pages/FocusCompressionPage.tsx",
+    "frontend/src/pages/HistoryPage.tsx",
+    "frontend/src/pages/LandingPage.tsx",
+    "frontend/src/pages/MentalDumpPage.tsx",
+    "frontend/src/pages/RecoveryPage.tsx",
+    "frontend/src/pages/SessionEndPage.tsx",
+    "frontend/src/store/adminSettings.ts",
+    "frontend/src/store/demoMode.ts",
+    "frontend/src/store/sessionStore.ts",
+    "frontend/src/store/syncSettings.ts",
+    "frontend/src/utils/deterministicFocusCompression.ts",
+    "frontend/src/utils/deterministicRecovery.ts",
+    "frontend/src/utils/exportSessionsTxt.ts",
+    "frontend/src/utils/llmOutputPolicy.ts",
     "project_state.json"
   ]
 }

@@ -97,47 +97,6 @@
         font-weight: 300;
         letter-spacing: -0.01em;
     }
-
-    /* High contrast mode */
-    .high-contrast {
-        --calm-deep: 0.20 0.15 245;
-        --calm-muted: 0.40 0.08 240;
-        --calm-border: 0.75 0.05 240;
-        --foreground: 0.10 0.15 245;
-    }
-
-    /* Large font mode */
-    .large-font {
-        font-size: 112.5%;
-    }
-
-    .large-font h1 {
-        font-size: 1.15em;
-    }
-
-    .large-font h2 {
-        font-size: 1.12em;
-    }
-
-    .large-font p,
-    .large-font button,
-    .large-font input,
-    .large-font textarea {
-        font-size: 1.08em;
-    }
-
-    /* Enhanced focus states for keyboard navigation */
-    *:focus-visible {
-        outline: 3px solid oklch(var(--calm-deep));
-        outline-offset: 2px;
-        border-radius: 4px;
-    }
-
-    button:focus-visible,
-    a:focus-visible {
-        outline: 3px solid oklch(var(--calm-deep));
-        outline-offset: 3px;
-    }
 }
 
 @layer utilities {

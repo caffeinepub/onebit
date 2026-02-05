@@ -1,31 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Play } from 'lucide-react';
-import { isDemoMode, enableDemoMode } from '../store/demoMode';
+import { Sparkles, History, Play } from 'lucide-react';
+import { isDemoMode, enableDemoMode, disableDemoMode } from '../store/demoMode';
 import { getDemoVideoLink, getPitchText } from '../store/adminSettings';
-import { getTodaysAnchor, loadDailyAnchors } from '../store/dailyAnchorPhrases';
 
 interface LandingPageProps {
   onStart: () => void;
-  onStartDemo: () => void;
   onViewHistory: () => void;
 }
 
-export default function LandingPage({ onStart, onStartDemo, onViewHistory }: LandingPageProps) {
+export default function LandingPage({ onStart, onViewHistory }: LandingPageProps) {
+  const [demoMode, setDemoMode] = useState(false);
   const [demoVideo, setDemoVideo] = useState('');
   const [pitch, setPitch] = useState('');
-  const [dailyAnchor, setDailyAnchor] = useState('');
 
   useEffect(() => {
-    loadDailyAnchors();
+    setDemoMode(isDemoMode());
     setDemoVideo(getDemoVideoLink());
     setPitch(getPitchText());
-    setDailyAnchor(getTodaysAnchor());
   }, []);
 
-  const handleStartDemo = () => {
-    enableDemoMode();
-    onStartDemo();
+  const handleToggleDemo = () => {
+    if (demoMode) {
+      disableDemoMode();
+      setDemoMode(false);
+    } else {
+      enableDemoMode();
+      setDemoMode(true);
+    }
   };
 
   return (
@@ -40,19 +42,19 @@ export default function LandingPage({ onStart, onStartDemo, onViewHistory }: Lan
             />
           </div>
           
+          {demoMode && (
+            <div className="inline-block px-4 py-2 bg-calm-deep/10 backdrop-blur-sm rounded-full text-sm text-calm-deep font-light border border-calm-deep/20">
+              Demo Mode Active
+            </div>
+          )}
+          
           <h1 className="text-5xl md:text-7xl font-extralight text-calm-deep tracking-tight leading-tight">
-            Onebit — focus on one<br />important thing<br />right now
+            Focus on one<br />important thing<br />right now.
           </h1>
           
           <p className="text-xl md:text-2xl text-calm-muted font-light max-w-xl mx-auto leading-relaxed">
             {pitch || 'Let go of everything else. Just for a moment.'}
           </p>
-
-          {dailyAnchor && (
-            <p className="text-lg text-calm-deep/80 font-light italic max-w-lg mx-auto">
-              {dailyAnchor}
-            </p>
-          )}
 
           {demoVideo && (
             <div className="flex justify-center">
@@ -76,26 +78,29 @@ export default function LandingPage({ onStart, onStartDemo, onViewHistory }: Lan
             className="px-14 py-7 text-xl font-light rounded-full bg-calm-deep hover:bg-calm-deep/90 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
           >
             <Sparkles className="mr-3 h-6 w-6" />
-            Start Onebit
+            Start
           </Button>
 
-          <Button
-            onClick={handleStartDemo}
-            size="lg"
-            variant="outline"
-            className="px-14 py-7 text-xl font-light rounded-full border-2 border-calm-deep text-calm-deep hover:bg-calm-deep/5"
-          >
-            Try Demo
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={onViewHistory}
+              variant="ghost"
+              size="sm"
+              className="text-calm-muted hover:text-calm-deep font-light"
+            >
+              <History className="mr-2 h-4 w-4" />
+              History
+            </Button>
 
-          <Button
-            onClick={onViewHistory}
-            variant="ghost"
-            size="sm"
-            className="text-calm-muted hover:text-calm-deep font-light mt-2"
-          >
-            View History
-          </Button>
+            <Button
+              onClick={handleToggleDemo}
+              variant="ghost"
+              size="sm"
+              className="text-calm-muted hover:text-calm-deep font-light"
+            >
+              {demoMode ? 'Exit Demo' : 'Try Demo'}
+            </Button>
+          </div>
         </div>
       </div>
 

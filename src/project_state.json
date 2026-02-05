@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 38,
-  "summary": "User confirms the next deliverable should be a proposal document only (no code yet) that redesigns Onebit from scratch and proposes a full enhancement set for approval. They want every existing feature re-evaluated from zero, and they want the deterministic system to use everything available (user text plus structured inputs/options) to better understand user state, while expanding AI-like deterministic behavior and adding burnout/overwhelm recovery support; also remove the Try Demo entrypoint remains desired.",
+  "projectStateVersion": 15,
+  "summary": "Onebit is being rebuilt from scratch as a calm, minimal focus web app that works stably without live LLMs by default. The core flow is fixed (Landing → Mental Dump → Context Snapshot (blocker+time) → deterministic Focus Compression → Action Mode (single task + client timer) → Manual Check-in → deterministic Recovery (micro-steps) → Session End → light Session History). The product is local-first with optional opt-in backend sync (Motoko backend optional). LLM integration is strictly backend-only, disabled by default, limited to Focus Compression + Recovery (max 3 calls/session), and must always fallback to deterministic rules on error/timeout. Required additions include demo mode with 3 canned sessions, an admin private panel for backend-only OPENAI_API_KEY plus demo video link + pitch text, accessibility + Grok/Calm-inspired theme, and exporting sessions as .txt, with build notes documenting LLM hooks and safe enablement.",
   "existing_features": [
     {
       "id": "IF-1",
@@ -33,6 +33,50 @@
         "timebox selection"
       ],
       "description": "Collects the user’s current focus challenge and available time via radio-group options, enforcing selection of both before continuing.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "AI focus task generation with timeout/retry",
+      "synonyms": [
+        "OpenAI task generation",
+        "focus prompt"
+      ],
+      "description": "Starts a backend session, calls the backend to generate a focus task (OpenAI chat completions), enforces a ~35s client-side timeout, retries once at the mutation layer, and displays loading/error states.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "AI response parsing and error classification",
+      "synonyms": [
+        "OpenAI response handling",
+        "semanticDot stripping"
+      ],
+      "description": "Parses OpenAI JSON responses when available, extracts the assistant message, removes trailing `.semanticDot`, normalizes punctuation, validates minimum length, and maps backend/service errors into user-facing messages (including admin-only configuration errors).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Fallback task suggestions when AI is unavailable",
+      "synonyms": [
+        "offline fallback",
+        "degraded mode"
+      ],
+      "description": "When AI generation fails (non-admin errors), the frontend selects a suggested fallback task and continues the session flow, communicating the degraded mode to the user.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Recovery step generation after ‘stuck’/‘avoided’ outcomes",
+      "synonyms": [
+        "next step generator",
+        "smaller step"
+      ],
+      "description": "After a negative outcome, generates a smaller next step via AI (with the same timeout/error handling) and enforces an AI call limit (max 3 per session) before forcing a fallback suggestion.",
       "reqIds": [],
       "version": 1
     },
@@ -81,6 +125,17 @@
       "version": 1
     },
     {
+      "id": "IF-12",
+      "title": "Admin-managed OpenAI API key storage and verification",
+      "synonyms": [
+        "API key management",
+        "OpenAI key provisioning"
+      ],
+      "description": "Backend supports storing an OpenAI API key (admin-only), verifying that a key is set (trap-based), and using the stored key to authorize OpenAI outcalls.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
       "id": "IF-13",
       "title": "User profile storage (authorized)",
       "synonyms": [
@@ -88,6 +143,17 @@
         "user metadata"
       ],
       "description": "Backend supports saving and retrieving user profiles keyed by principal text, with authorization rules (users access own; admins can access others).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "ICP HTTP outcalls wrapper for external APIs",
+      "synonyms": [
+        "management canister HTTP",
+        "outcall module"
+      ],
+      "description": "Provides helper functions for HTTP GET/POST outcalls with cycle allocation, standard headers (User-Agent, Idempotency-Key), and a transform function that strips response headers.",
       "reqIds": [],
       "version": 1
     },
@@ -103,6 +169,19 @@
       "version": 1
     },
     {
+      "id": "IF-16",
+      "title": "Safe JSON construction for OpenAI requests (escaped user input)",
+      "synonyms": [
+        "structured JSON payload",
+        "no string concatenation"
+      ],
+      "description": "Backend builds OpenAI request bodies via structured JSON construction/encoding (instead of string concatenation) so user-provided text (mental dump/context/duration/recovery framing) is correctly escaped and cannot break or alter the payload.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
       "id": "IF-17",
       "title": "Session privacy + caller-based authorization enforcement",
       "synonyms": [
@@ -112,6 +191,32 @@
       "description": "Backend enforces caller/identity authorization across session lifecycle and session reads so users can only create/read/update/end their own sessions; admin-only access is required for global session listing (or equivalent restriction).",
       "reqIds": [
         "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "Stable persistence for admin-stored OpenAI API key across upgrades",
+      "synonyms": [
+        "stable storage",
+        "upgrade-safe key retention"
+      ],
+      "description": "Backend stores the admin-managed OpenAI API key (and other critical state as needed) in stable storage with migration support so the key persists across canister upgrades.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-19",
+      "title": "Admin API key clear/rotate operations + configured/not-configured UX",
+      "synonyms": [
+        "key rotation",
+        "clear key"
+      ],
+      "description": "Admins can clear or rotate the stored OpenAI API key (including intentionally setting it to empty/none) and the frontend provides a clear configured/not-configured state and configuration flow consistent with the admin role model.",
+      "reqIds": [
+        "REQ-10"
       ],
       "version": 1
     },
@@ -142,220 +247,144 @@
       "version": 1
     },
     {
-      "id": "IF-23",
-      "title": "Deterministic Focus Compression (default, no LLM required)",
+      "id": "IF-22",
+      "title": "Responses-style OpenAI response parsing support",
       "synonyms": [
-        "rule-based task selection",
-        "offline focus compression"
+        "prefer output_text",
+        "new response shape parsing"
       ],
-      "description": "Implements deterministic Focus Compression logic to convert the mental dump + context + timebox into exactly one concrete focus task by default (no live LLM required), with safe fallbacks when inputs are low-signal.",
-      "reqIds": [],
+      "description": "Frontend parsing supports newer Responses-style outputs (e.g., preferring `output_text` when present) while preserving existing error classification behavior and fallback behavior.",
+      "reqIds": [
+        "REQ-4"
+      ],
       "version": 1
     },
     {
-      "id": "IF-24",
-      "title": "Deterministic Recovery logic (default micro-steps)",
-      "synonyms": [
-        "rule-based recovery",
-        "offline recovery"
+      "id": "feature-implement-the-onebit-core-flow-exactly-as-landing-mental-dump-context-snapshot-blocker-time-focus-compression-deterministic-action-mode-single-task-client-timer-manual-check-in-done-stuck-avoided-recovery-micro-steps-session-end-light-session-history-ensuring-each-screen-presents-a-single-primary-decision-action-and-uses-english-for-all-user-facing-text",
+      "title": "Implement the Onebit core flow exactly as: Landing → Mental Dump → Context Snapshot (blocker + time) → Focus Compression (deterministic) → Action Mode (single task + client timer) → Manual Check-in (done/stuck/avoided) → Recovery (micro-steps) → Session End → Light Session History, ensuring each screen presents a single primary decision/action and uses English for all user-facing text.",
+      "reqIds": [
+        "REQ-11"
       ],
-      "description": "Implements deterministic Recovery behavior after check-in: provides short, neutral recovery outputs (e.g., micro-steps for “stuck”, supportive reframe/options for “avoided”) without requiring LLM calls.",
-      "reqIds": [],
       "version": 1
     },
     {
-      "id": "IF-25",
-      "title": "Demo mode with 3 canned sessions (zero API calls)",
-      "synonyms": [
-        "offline demo",
-        "canned sessions"
+      "id": "feature-implement-deterministic-focus-compression-as-the-default-behavior-in-both-frontend-and-backend-split-mental-dump-by-lines-and-common-separators-score-candidates-verb-urgency-shortness-prefer-candidates-that-fit-the-selected-time-bucket-10-20-30-minutes-and-return-exactly-one-primary-action-plus-an-optional-fallback-action",
+      "title": "Implement deterministic Focus Compression as the default behavior in both frontend and backend: split mental dump by lines (and common separators), score candidates (verb + urgency + shortness), prefer candidates that fit the selected time bucket (10/20/30 minutes), and return exactly ONE primary action plus an optional fallback action.",
+      "reqIds": [
+        "REQ-12"
       ],
-      "description": "Adds a demo mode that runs the full app flow using three prebuilt sessions and disables external/LLM calls for reliable demonstrations and offline stability.",
-      "reqIds": [],
       "version": 1
     },
     {
-      "id": "IF-26",
-      "title": "Local-first session store with optional sync settings",
-      "synonyms": [
-        "client-side persistence",
-        "opt-in backend sync"
-      ],
-      "description": "Introduces local-first session persistence via a client storage layer and state stores, with optional sync settings to enable/disable backend interaction without breaking the core experience.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-27",
-      "title": "Action Mode countdown timer",
-      "synonyms": [
-        "client timer",
-        "timeboxed focus timer"
-      ],
-      "description": "Implements a countdown timer in Action Mode to support timeboxing the single selected task, using a dedicated timer hook and UI integration.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-28",
-      "title": "Light Session History page",
-      "synonyms": [
-        "history list",
-        "past sessions"
-      ],
-      "description": "Adds a lightweight session history view to review previous sessions captured in the local-first store (and/or synced backend when enabled).",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-29",
-      "title": "Export sessions as .txt",
-      "synonyms": [
-        "text export",
-        "download history"
-      ],
-      "description": "Provides deterministic text export of session history as a .txt file for user-owned data portability.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-32",
-      "title": "Quick Add capture (modal + shortcut) for Mental Dump",
-      "synonyms": [
-        "quick capture",
-        "rapid thought add"
-      ],
-      "description": "Adds a Quick Add dialog to rapidly capture thoughts/tasks into the Mental Dump/session input without disrupting the one-decision-per-screen flow (implemented via a dedicated QuickAddDialog component integrated into the app shell).",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-33",
-      "title": "Accessibility controls (keyboard nav, contrast toggle, large font mode)",
-      "synonyms": [
-        "a11y settings",
-        "accessible UI modes"
-      ],
-      "description": "Introduces explicit accessibility features across the UI, including dedicated AccessibilityControls plus persisted a11y settings (e.g., contrast and large-font modes) to improve usability and accessible defaults.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-34",
-      "title": "Daily Anchor line with admin-editable phrase list",
-      "synonyms": [
-        "rotating daily phrase",
-        "daily anchor phrases"
-      ],
-      "description": "Landing page shows one calm “Daily Anchor” sentence that rotates by local date from a small internal phrase list; the phrase list is editable via the private admin panel and persisted locally-first.",
+      "id": "feature-implement-deterministic-recovery-logic-as-the-default-behavior-in-both-frontend-and-backend-for-outcome-stuck-return-exactly-2-micro-steps-for-outcome-avoided-return-a-neutral-reframe-plus-exactly-2-micro-steps-and-an-explicit-option-to-end-the-session-keep-language-non-therapeutic-non-motivational-and-minimal",
+      "title": "Implement deterministic Recovery Logic as the default behavior in both frontend and backend: for outcome “stuck” return exactly 2 micro-steps; for outcome “avoided” return a neutral reframe plus exactly 2 micro-steps and an explicit option to end the session; keep language non-therapeutic, non-motivational, and minimal.",
       "reqIds": [
         "REQ-13"
       ],
       "version": 1
     },
     {
-      "id": "IF-35",
-      "title": "End-of-day reflection prompt (“What helped today?”) stored local-first",
-      "synonyms": [
-        "daily reflection",
-        "reflection prompt dialog"
-      ],
-      "description": "Once per local day, optionally prompts the user with exactly “What helped today?” and stores the short response locally-first; History displays reflections in a lightweight way alongside session history.",
-      "reqIds": [
-        "REQ-15"
-      ],
-      "version": 1
-    },
-    {
-      "id": "IF-36",
-      "title": "Editable Micro-Step Library and deterministic Recovery selection (two steps)",
-      "synonyms": [
-        "micro-step library",
-        "recovery micro-steps"
-      ],
-      "description": "Provides a built-in micro-step library (Writing/Studying/Calls/Admin/Generic) editable from the private admin panel; deterministic Recovery selects exactly two micro-steps based on task type and outcome (stuck/avoided).",
+      "id": "feature-add-a-client-side-timer-in-action-mode-runs-entirely-in-the-browser-that-supports-start-pause-reset-and-matches-the-selected-time-bucket-the-timer-must-not-require-backend-calls-and-must-not-be-affected-by-llm-availability",
+      "title": "Add a client-side timer in Action Mode (runs entirely in the browser) that supports start/pause/reset and matches the selected time bucket; the timer must not require backend calls and must not be affected by LLM availability.",
       "reqIds": [
         "REQ-14"
       ],
       "version": 1
     },
     {
-      "id": "IF-37",
-      "title": "History “soft habit memory” line (last 14 days)",
-      "synonyms": [
-        "habit memory",
-        "usage memory"
+      "id": "feature-implement-demo-mode-with-exactly-3-canned-sessions-and-zero-api-calls-no-openai-calls-and-no-backend-dependency-and-ensure-the-full-flow-is-usable-in-demo-mode-from-landing-through-history-and-export",
+      "title": "Implement Demo Mode with exactly 3 canned sessions and zero API calls (no OpenAI calls and no backend dependency), and ensure the full flow is usable in demo mode from Landing through History and export.",
+      "reqIds": [
+        "REQ-15"
       ],
-      "description": "History computes deterministically from saved sessions and displays exactly: “You used Onebit on X of the last 14 days” (no streaks/gamification).",
+      "version": 1
+    },
+    {
+      "id": "feature-implement-local-first-session-storage-store-session-drafts-and-completed-sessions-on-the-client-persisted-across-reloads-and-add-an-opt-in-toggle-for-backend-sync-that-when-enabled-syncs-sessions-to-the-motoko-backend-when-disabled-the-app-must-not-require-authentication-or-backend-availability",
+      "title": "Implement local-first session storage: store session drafts and completed sessions on the client (persisted across reloads), and add an opt-in toggle for backend sync that, when enabled, syncs sessions to the Motoko backend; when disabled, the app must not require authentication or backend availability.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-light-session-history-ui-showing-recent-sessions-local-first-optionally-merged-with-backend-synced-sessions-when-enabled-including-timestamp-chosen-one-action-outcome-and-if-present-recovery-micro-steps-next-step-provide-a-start-new-onebit-entrypoint-from-history",
+      "title": "Add Light Session History UI showing recent sessions (local-first, optionally merged with backend-synced sessions when enabled), including: timestamp, chosen one action, outcome, and (if present) recovery micro-steps/next step; provide a “Start new Onebit” entrypoint from History.",
       "reqIds": [
         "REQ-17"
       ],
       "version": 1
     },
     {
-      "id": "IF-38",
-      "title": "Finalization checklist view for launch-ready content",
-      "synonyms": [
-        "finalization checklist page",
-        "content readiness checklist"
+      "id": "feature-implement-export-of-session-history-as-a-plain-txt-file-generated-in-the-browser-no-backend-including-the-key-fields-for-each-session-in-a-readable-format-the-export-must-work-in-demo-mode-and-offline",
+      "title": "Implement export of session history as a plain .txt file generated in the browser (no backend), including the key fields for each session in a readable format; the export must work in demo mode and offline.",
+      "reqIds": [
+        "REQ-18"
       ],
-      "description": "Adds an in-app checklist (post-demo and/or admin-accessible) to collect/confirm launch assets and editable content: logo choice, accent color, demo sessions/inputs (including deterministic generation option), background/pattern, micro-step library, daily anchors, and demo video link + pitch text.",
+      "version": 1
+    },
+    {
+      "id": "feature-make-llm-integration-optional-and-disabled-by-default-add-a-clearly-labeled-admin-controlled-setting-that-enables-disables-llm-usage-enforce-a-maximum-of-3-llm-calls-per-session-and-always-fall-back-to-deterministic-focus-compression-and-deterministic-recovery-logic-on-error-timeout-restrict-llm-usage-to-only-focus-compression-and-recovery",
+      "title": "Make LLM integration optional and disabled by default: add a clearly labeled admin-controlled setting that enables/disables LLM usage, enforce a maximum of 3 LLM calls per session, and always fall back to deterministic Focus Compression and deterministic Recovery Logic on error/timeout; restrict LLM usage to only Focus Compression and Recovery.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-strict-openai-security-and-output-constraints-openai-requests-must-be-made-backend-only-and-only-if-openai-api-key-is-configured-in-the-backend-never-store-or-expose-the-key-in-frontend-state-logs-or-ui-ensure-any-llm-output-is-at-most-1-sentence-neutral-and-contains-no-therapy-motivation-greetings-or-self-referential-ai-language",
+      "title": "Enforce strict OpenAI security and output constraints: OpenAI requests must be made backend-only and only if OPENAI_API_KEY is configured in the backend; never store or expose the key in frontend state, logs, or UI; ensure any LLM output is at most 1 sentence, neutral, and contains no therapy/motivation, greetings, or self-referential AI language.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-private-admin-panel-to-a-manage-openai-api-key-existing-and-b-attach-a-demo-video-link-60s-and-pitch-text-stored-in-backend-state-expose-these-two-fields-to-the-landing-page-for-display-without-exposing-admin-only-controls-to-non-admin-users",
+      "title": "Extend the private Admin panel to (a) manage OPENAI_API_KEY (existing) and (b) attach a demo video link (60s) and pitch text stored in backend state; expose these two fields to the Landing page for display without exposing admin-only controls to non-admin users.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-accessibility-and-ui-theme-apply-a-grok-calm-inspired-reference-only-minimal-theme-consistently-across-all-pages-maintaining-strong-contrast-keyboard-navigation-visible-focus-states-and-clear-typography-keep-the-ui-calm-and-sparse-with-one-decision-per-screen",
+      "title": "Accessibility and UI theme: apply a Grok + Calm inspired (reference-only) minimal theme consistently across all pages, maintaining strong contrast, keyboard navigation, visible focus states, and clear typography; keep the UI calm and sparse with one decision per screen.",
       "reqIds": [
         "REQ-22"
       ],
       "version": 1
     },
     {
-      "id": "IF-39",
-      "title": "Private admin panel for non-AI content + optional backend sync toggle",
-      "synonyms": [
-        "admin settings (non-AI)",
-        "sync toggle admin"
-      ],
-      "description": "Admin settings provide fields for a 60-second demo video link and one-paragraph pitch text used on Landing, plus controls to edit non-AI content (e.g., daily anchor phrases, micro-step library, demo content) and to enable/disable backend sync (local-first default).",
-      "reqIds": [
-        "REQ-16",
-        "REQ-21"
-      ],
-      "version": 1
-    },
-    {
-      "id": "IF-40",
-      "title": "Authentication optional; Internet Identity used only when backend sync is enabled",
-      "synonyms": [
-        "optional login",
-        "II gated by sync"
-      ],
-      "description": "App works fully without login by default. Internet Identity is only required/used when optional backend sync is enabled; when disabled, the app never attempts backend writes and runs local-first.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "feature-create-a-proposal-document-no-code-changes-that-redesigns-onebit-from-scratch-while-preserving-the-same-core-goal-and-session-format-and-proposes-an-expanded-set-of-deterministic-rule-based-ai-like-capabilities-plus-wellness-burnout-overwhelm-support-for-user-approval-before-implementation-add-the-document-to-the-repo-as-frontend-redesign-proposal-md",
-      "title": "Create a proposal document (no code changes) that redesigns Onebit from scratch while preserving the same core goal and session format, and proposes an expanded set of deterministic (rule-based) “AI-like” capabilities plus wellness/burnout/overwhelm support for user approval before implementation. Add the document to the repo as `frontend/REDESIGN_PROPOSAL.md`.",
+      "id": "feature-add-a-short-build-notes-document-in-repo-that-explains-1-where-deterministic-focus-compression-and-recovery-logic-live-2-where-the-optional-llm-hooks-live-3-how-to-enable-llm-safely-admin-steps-key-configuration-and-4-how-the-max-3-calls-per-session-and-fallback-behavior-are-enforced",
+      "title": "Add a short build notes document in-repo that explains: (1) where deterministic Focus Compression and Recovery Logic live, (2) where the optional LLM hooks live, (3) how to enable LLM safely (admin steps, key configuration), and (4) how the max-3-calls-per-session and fallback behavior are enforced.",
       "reqIds": [
         "REQ-23"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-frontend-redesign-proposal-md-include-a-complete-end-to-end-ux-specification-for-the-redesigned-onebit-flow-showing-each-screen-s-purpose-primary-decision-required-inputs-and-outputs-and-how-the-flow-adapts-when-the-user-is-stuck-overwhelmed-burned-out-the-flow-must-use-both-free-text-and-structured-inputs-everything-to-better-understand-user-state",
-      "title": "In `frontend/REDESIGN_PROPOSAL.md`, include a complete end-to-end UX specification for the redesigned Onebit flow, showing each screen’s purpose, primary decision, required inputs, and outputs, and how the flow adapts when the user is stuck/overwhelmed/burned out. The flow must use both free text and structured inputs (“everything”) to better understand user state.",
+      "id": "feature-builder-check-unsupported-capability-handling-if-backend-secrets-project-settings-cannot-be-programmatically-written-by-the-app-keep-the-admin-paste-api-key-flow-as-canister-stored-secret-admin-only-and-document-this-as-the-closest-safe-alternative-while-still-preventing-exposure-to-the-frontend",
+      "title": "Builder check / unsupported capability handling: if “backend secrets (project settings)” cannot be programmatically written by the app, keep the admin “paste API key” flow as canister-stored secret (admin-only) and document this as the closest safe alternative while still preventing exposure to the frontend.",
       "reqIds": [
         "REQ-24"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-in-frontend-redesign-proposal-md-include-a-feature-inventory-decision-table-that-re-evaluates-all-current-onebit-features-from-zero-and-marks-each-as-keep-modify-remove-or-postpone-the-proposal-must-explicitly-remove-the-try-demo-demo-mode-entrypoint-and-the-3-canned-demo-sessions-from-the-intended-product-experience",
-      "title": "In `frontend/REDESIGN_PROPOSAL.md`, include a feature inventory decision table that re-evaluates all current Onebit features from zero and marks each as: Keep, Modify, Remove, or Postpone. The proposal must explicitly remove the “Try Demo” / demo mode entrypoint and the 3 canned demo sessions from the intended product experience.",
-      "reqIds": [
-        "REQ-25"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Adapt OpenAI integration/prompting to Onebit’s website flow (single focus task + recovery step) using the newer OpenAI Responses-style request/response format (conceptually), while keeping keys managed server-side",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Adjust AI prompts/responses to better fit Onebit’s website format (single focus task + recovery/therapy-style step), updating the generated outputs accordingly",
+      "reqIds": [],
+      "status": "pending"
+    },
     {
       "id": "AR-3",
       "summary": "Update the UI look/feel and flow presentation inspired by xAI Grok and Calm.com, while keeping the same underlying Onebit session format/steps",
@@ -369,6 +398,28 @@
       "status": "pending"
     },
     {
+      "id": "AR-5",
+      "summary": "Rebuild OpenAI backend integration to reliably use the admin-stored API key (persist across upgrades), always include required `model`, and send `Authorization: Bearer ...` on every request; optionally align request/response shape with OpenAI Responses API style while keeping the Onebit flow",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Update the backend OpenAI HTTP outcall integration to align conceptually with the OpenAI “Responses API” style: send requests to the Responses endpoint, include a required `model`, always send `Authorization: Bearer <admin-stored-key>`, and return a response shape the frontend can reliably parse for the generated task text.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Adjust the prompting and generated outputs to fit a “one thing + recovery therapy” tone: generate exactly one concrete focus task (short, actionable, time-bounded) and, when needed, generate a smaller recovery next-step that is supportive, non-judgmental, and grounded—without verbose explanations or self-referential AI text.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "AR-10",
       "summary": "Redesign the UI look-and-feel inspired by xAI Grok and Calm.com (reference only) while keeping the same Onebit step format and underlying flow (landing → mental dump → context/time → action → check-in → recovery (optional) → end). Apply the new visual system consistently across all pages.",
       "reqIds": [
@@ -377,80 +428,38 @@
       "status": "pending"
     },
     {
+      "id": "AR-11",
+      "summary": "Rebuild Onebit from scratch to implement the exact required core flow (Landing → Mental Dump → Context Snapshot → Focus Compression → Action Mode + timer → Manual Check-in → Recovery → Session End → Light Session History) with a single decision per screen",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Implement deterministic FocusCompression logic (split/score lines, match time bucket, return ONE action + optional fallback) as the default behavior (no LLM required)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Implement deterministic RecoveryLogic: for “stuck” return 2 micro-steps; for “avoided” provide reframe + option to end; keep outputs short/neutral",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Add demo mode with 3 canned sessions and zero API calls for reliable offline/stable behavior",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
       "id": "AR-15",
-      "summary": "Add private admin panel controls for optional backend sync toggle (local-first by default) plus editable demo video link and one-paragraph submission pitch text",
+      "summary": "Implement local-first session storage with optional opt-in backend sync (Motoko backend optional), plus light session history and export sessions as .txt",
       "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-18",
-      "summary": "Implement the core Onebit flow exactly as specified (Landing → Mental Dump → Context → Focus Compression → Action Mode → Manual Check-In → Recovery → Session End → History) with one primary decision per screen and calm, respectful copy throughout; verify each step’s required UI elements and labels match the user-provided English text.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-25",
-      "summary": "Keep and validate accessibility requirements: full keyboard navigation for the core flow, contrast toggle, and large readable text mode; ensure controls are reachable and usable without a mouse across all steps.",
-      "reqIds": [
-        "REQ-19"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-26",
-      "summary": "Apply a consistent soft, minimal visual style inspired by Grok (clean, focused) and Calm (relaxed, spacious) across all pages, while keeping the UX simple and respectful and keeping one primary decision per screen.",
-      "reqIds": [
-        "REQ-20"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-29",
-      "summary": "From-scratch rebuild again and proactively add additional deterministic UX/product improvements beyond the explicitly listed requirements to make Onebit a better version (while respecting existing constraints/exclusions).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-32",
-      "summary": "Ensure admin-managed content is broadly editable for later (e.g., daily anchor phrases, micro-step library, demo sessions/inputs, demo video link, pitch text, and other non-AI copy/content used in the app) while keeping UX calm and within constraints.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-33",
-      "summary": "Expand deterministic “AI-like” behavior by enhancing rule-based logic and outputs (no external AI), making the app feel less narrow/limited from a user perspective",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-34",
-      "summary": "Add new wellness-oriented features for Recovery and “getting stuck” support (deterministic, non-gamified, within existing constraints)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-35",
-      "summary": "Remove the “Try Demo” feature / Demo Mode entrypoint and its 3 canned demo sessions from the product experience",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-36",
-      "summary": "Expand deterministic “AI-like” behavior with richer suggestions, adaptive fallback tasks, better input understanding, smarter stuck detection, and dynamic micro-steps (no external AI).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-37",
-      "summary": "Add deterministic wellness-oriented Recovery enhancements focused on burnout/overwhelm support and “focus on next one thing today” guidance, including normalization of failure/try-again messaging (non-gamified).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-38",
-      "summary": "Reset/redesign from scratch (delete/restart) but keep the same Onebit idea/logic/goal and produce a proposed enhancement set for user approval before rebuilding.",
+      "id": "AR-16",
+      "summary": "Add a private admin panel to manage backend-only OPENAI_API_KEY (never exposed to frontend/logs) and to attach a 60s demo video link + pitch text; include documented LLM hooks (disabled by default) with strict limits (FocusCompression+Recovery only, max 3 calls/session, fallback to deterministic on error/timeout, 1-sentence neutral output)",
       "reqIds": [],
       "status": "pending"
     }
@@ -462,20 +471,20 @@
     "Backend is a Motoko canister actor (ICP) using a migration hook pattern `(with migration = Migration.run)` and in-memory Maps for sessions and user profiles.",
     "Authorization is implemented via a mixin (`MixinAuthorization`) and an `access-control` module mapping Principals to roles (admin/user/guest). Admin bootstrap uses an environment variable token plus a user-provided secret.",
     "Sensitive bootstrap secret (admin token) is read from URL hash and persisted in sessionStorage, then removed from the URL via history.replaceState to reduce leakage.",
+    "OpenAI integration is done via ICP HTTP outcalls (management canister `IC.http_request`) with a transform function that strips response headers.",
+    "AI responses are post-processed on the frontend (parseAIResponse) to handle OpenAI JSON format, strip a required `.semanticDot` suffix, normalize punctuation, and classify error modes (admin key error vs service error).",
     "UI styling uses TailwindCSS with a custom OKLCH “calm” design token palette and next-themes ThemeProvider (forced light by default), plus shadcn/ui-style components and sonner toasts.",
-    "External AI/LLM integrations (OpenAI HTTP outcalls, key storage, response parsing) must be removed or fully disabled; the product must run end-to-end using deterministic Focus Compression + deterministic Recovery only.",
-    "Ensure no code paths require or reference OpenAI keys; no secrets in frontend, logs, or deployment config for AI.",
-    "User now wants the rebuild to include additional unspecified improvements beyond the stated spec (scope expansion); additions must still respect deterministic-only logic and explicit exclusions (no gamification, chatbots, push, sockets, etc.)."
+    "Resilience patterns include explicit 35s timeouts for AI calls, limited retries (react-query mutation retry=1), and fallback task suggestions when AI is unavailable."
   ],
   "known_issues": [
     "Two CSS entrypoints are present in the repo dump (`frontend/src/index.css` and `frontend/index.css`); only `src/index.css` is imported, but duplication may cause confusion/drift.",
-    "User requested web searching for resources; this environment may not support live web browsing—must proceed with offline guidance and safe alternatives.",
-    "User request expanded scope to 'add what's not mentioned' which risks scope creep/conflict with explicit exclusions; requires clarification/guardrails on what 'better' can include.",
-    "User requests web searching for best-practice feature ideas; live web browsing may not be available, so enhancements may need to be proposed from offline knowledge and user approval."
+    "Outcall cycle budget is a fixed constant; failures due to insufficient cycles or oversized responses are not explicitly handled (max_response_bytes is null).",
+    "OpenAI requests are intermittently failing due to missing required request fields (e.g., `model`) and/or missing `Authorization: Bearer <key>` header; key storage/lookup may be inconsistent between deployments, leading to 'AI key missing/invalid' and 'API key not found' errors.",
+    "AI integration reliability is currently unstable (repeated failures across focus-task generation), indicating the backend may not be consistently using the admin-stored key and/or not persisting it correctly across rebuilds/deploys."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "gameProjectType": "none",
   "projectName": "Onebit",
-  "clarification_mode": "thinking",
+  "clarification_mode": "pro",
   "clarification_rounds": 0
 }
